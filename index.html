@@ -1,828 +1,537 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CMT 8/923.001 Slot Cutter &amp; Shim Stack Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>slotcutter — CMT 8/923.001 calculator</title>
+  <meta name="theme-color" content="#fdf6e3" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#002b36" media="(prefers-color-scheme: dark)" />
+  <meta name="color-scheme" content="light dark" />
   <style>
     :root {
-      --cmt-orange: #ff6b18;
-      --cmt-orange-dark: #d95308;
-      --cmt-orange-soft: #fff3eb;
-      --bg: #f6f7f9;
-      --card: #ffffff;
-      --text: #1c2026;
-      --muted: #5f6876;
-      --border: #e2e6ee;
-      --steel: #4a525d;
-      --carbide: #8c96a4;
-      --shim-4: #1d4ed8;
-      --shim-1: #047857;
-      --shim-05: #b45309;
-      --shim-01: #6d28d9;
-      --success: #059669;
-      --warn: #d97706;
+      --base03: #002b36;
+      --base02: #073642;
+      --base01: #586e75;
+      --base00: #657b83;
+      --base0: #839496;
+      --base1: #93a1a1;
+      --base2: #eee8d5;
+      --base3: #fdf6e3;
+      --yellow: #b58900;
+      --orange: #cb4b16;
+      --red: #dc322f;
+      --blue: #268bd2;
+
+      --paper: var(--base3);
+      --surface: var(--base3);
+      --sunken: var(--base2);
+      --ink: var(--base02);
+      --ink-soft: var(--base01);
+      --rule: #e2dbc6;
+      --rule-strong: var(--base1);
+      --accent: var(--orange);
+      --focus: var(--blue);
+      --danger: var(--red);
+
+      --font-sans:
+        ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      --font-serif: 'Iowan Old Style', 'Charter', 'Palatino Linotype', Palatino, Georgia, serif;
+
+      --radius: 10px;
+      --radius-sm: 6px;
+      --tap: 42px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    * {
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: var(--base03);
+        --surface: var(--base03);
+        --sunken: var(--base02);
+        --ink: var(--base1);
+        --ink-soft: var(--base0);
+        --rule: #0d4351;
+        --rule-strong: var(--base01);
+      }
+    }
+
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.45;
-      padding-bottom: 48px;
+      min-height: 100dvh;
+      font: 16px/1.5 var(--font-sans);
+      color: var(--ink);
+      background: var(--paper);
+      font-variant-numeric: tabular-nums;
     }
 
-    header {
-      background: linear-gradient(135deg, #1b1e23 0%, #2b3038 100%);
-      color: #fff;
-      border-bottom: 4px solid var(--cmt-orange);
-      padding: 18px 20px;
+    ::selection {
+      background: var(--base2);
+      color: var(--base03);
     }
 
-    .header-inner {
-      max-width: 1120px;
-      margin: 0 auto;
+    button, input, select {
+      font: inherit;
+      color: inherit;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    /* ---------- Header ---------- */
+
+    .topbar {
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .topbar-row {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: var(--space-2) var(--space-4);
+      min-height: 50px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-weight: 600;
     }
 
-    .brand-badge {
-      background: var(--cmt-orange);
-      color: #111;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 1.05rem;
+    .brand-mark svg {
+      display: block;
+      width: 22px;
+      height: 22px;
+      color: var(--accent);
+      transition: transform 0.8s var(--ease);
     }
 
-    .brand h1 {
-      margin: 0;
-      font-size: 1.25rem;
-      font-weight: 700;
+    .brand:hover .brand-mark svg {
+      transform: rotate(360deg);
     }
 
-    .brand p {
-      margin: 2px 0 0;
-      font-size: 0.85rem;
-      color: #b9c0cb;
+    .brand-sub {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: var(--ink-soft);
     }
 
-    .container {
-      max-width: 1120px;
-      margin: 22px auto 0;
-      padding: 0 16px;
+    /* ---------- Layout ---------- */
+
+    .layout {
       display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 20px;
+      gap: var(--space-5);
+      max-width: 960px;
+      margin: 0 auto;
+      padding: var(--space-4);
       align-items: start;
     }
 
-    @media (max-width: 880px) {
-      .container {
-        grid-template-columns: 1fr;
+    @media (min-width: 760px) {
+      .layout {
+        grid-template-columns: 280px 1fr;
+        padding: var(--space-5) var(--space-4);
       }
     }
 
     .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px 20px;
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      padding: var(--space-4);
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
     }
 
-    .card-title {
-      margin: 0 0 14px;
-      font-size: 1rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+    /* ---------- Controls ---------- */
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 3px;
+      border: 1px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
     }
 
-    .control-group {
-      margin-bottom: 18px;
+    .seg-btn {
+      min-height: 34px;
+      padding: 0 var(--space-3);
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--ink-soft);
+      cursor: pointer;
     }
 
-    .control-label {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
+    .seg-btn[aria-checked='true'] {
+      background: var(--sunken);
+      color: var(--ink);
       font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 8px;
     }
 
-    .width-input-row {
+    .field {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: var(--space-3);
     }
 
-    .width-number-wrap {
+    .field-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--ink-soft);
+    }
+
+    .input-wrap {
       position: relative;
-      width: 125px;
-      flex-shrink: 0;
+      display: flex;
     }
 
-    .width-number {
+    .input-wrap input,
+    .select-input {
       width: 100%;
-      font-size: 1.45rem;
-      font-weight: 800;
-      padding: 8px 38px 8px 12px;
-      border: 2px solid var(--cmt-orange);
-      border-radius: 8px;
-      color: var(--text);
-      background: #fff;
+      min-height: var(--tap);
+      padding: 8px 10px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      font-size: 1rem;
+      font-weight: 600;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
 
-    .width-unit {
+    .input-wrap input {
+      padding-right: 36px;
+    }
+
+    .input-wrap input:focus,
+    .select-input:focus {
+      outline: none;
+      border-color: var(--rule-strong);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent);
+    }
+
+    .suffix {
       position: absolute;
-      right: 10px;
       top: 50%;
+      right: 10px;
       transform: translateY(-50%);
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--base1);
       pointer-events: none;
     }
 
-    .step-btn {
-      background: #f0f2f6;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-weight: 700;
-      font-size: 0.95rem;
+    .switch {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+      font-size: 0.84rem;
+      color: var(--ink-soft);
       cursor: pointer;
-      color: var(--text);
-      transition: all 0.15s;
       user-select: none;
     }
 
-    .step-btn:hover {
-      background: #e4e8f0;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      margin-top: 10px;
-      accent-color: var(--cmt-orange);
-      cursor: pointer;
-    }
-
-    .quick-presets {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 10px;
-    }
-
-    .preset-chip {
-      background: #f3f5f8;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 9px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      color: var(--muted);
-      transition: all 0.15s;
-    }
-
-    .preset-chip:hover,
-    .preset-chip.active {
-      background: var(--cmt-orange);
-      color: #fff;
-      border-color: var(--cmt-orange);
-    }
-
-    select {
-      width: 100%;
-      padding: 9px 11px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #fff;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--text);
-    }
-
-    .summary-banner {
-      background: var(--cmt-orange-soft);
-      border: 1px solid #ffd2b3;
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-bottom: 16px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .summary-metric {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .summary-metric .lbl {
-      font-size: 0.74rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .summary-metric .val {
-      font-size: 1.2rem;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .summary-metric .val.accent {
-      color: var(--cmt-orange-dark);
-    }
-
-    /* Stack recipe list (top to bottom) */
-    .recipe-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin: 14px 0;
-    }
-
-    .recipe-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
-      border-radius: 9px;
-      border: 1px solid var(--border);
-      background: #fafbfc;
-      gap: 12px;
-    }
-
-    .recipe-item.cutter {
-      background: #fff8f3;
-      border-color: #ffcaa6;
-      border-left: 5px solid var(--cmt-orange);
-    }
-
-    .recipe-item.shim {
-      background: #f8fafc;
-      border-left: 5px solid #475569;
-    }
-
-    .recipe-item.bearing {
-      background: #f3f4f6;
-      border-left: 5px solid #9ca3af;
-    }
-
-    .recipe-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .step-tag {
-      font-size: 0.75rem;
-      font-weight: 800;
-      padding: 3px 7px;
-      border-radius: 5px;
-      background: #e5e7eb;
-      color: #374151;
-      min-width: 26px;
-      text-align: center;
-    }
-
-    .recipe-item.cutter .step-tag {
-      background: var(--cmt-orange);
-      color: #fff;
-    }
-
-    .recipe-title {
-      font-weight: 700;
-      font-size: 0.95rem;
-    }
-
-    .recipe-sub {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .shim-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      justify-content: flex-end;
-    }
-
-    .shim-pill {
-      font-size: 0.76rem;
-      font-weight: 700;
-      padding: 2px 8px;
+    .switch input {
+      appearance: none;
+      position: relative;
+      flex: none;
+      width: 34px;
+      height: 19px;
+      margin: 0;
+      border: 1px solid var(--rule-strong);
       border-radius: 999px;
-      color: #fff;
-      white-space: nowrap;
+      background: var(--sunken);
+      cursor: pointer;
     }
 
-    .shim-pill.s4 { background: var(--shim-4); }
-    .shim-pill.s1 { background: var(--shim-1); }
-    .shim-pill.s05 { background: var(--shim-05); }
-    .shim-pill.s01 { background: var(--shim-01); }
+    .switch input::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--ink-soft);
+      transition: transform 0.2s var(--ease);
+    }
 
-    .svg-stage {
-      width: 100%;
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow-x: auto;
+    .switch input:checked {
+      background: var(--ink-soft);
+    }
+
+    .switch input:checked::after {
+      background: var(--paper);
+      transform: translateX(15px);
+    }
+
+    /* ---------- Alternative Stacks ---------- */
+
+    .alt-section {
+      margin-top: var(--space-4);
+      padding-top: var(--space-3);
+      border-top: 1px dashed var(--rule);
     }
 
     .alt-list {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .alt-btn {
-      text-align: left;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.15s;
-    }
-
-    .alt-btn:hover {
-      border-color: var(--cmt-orange);
-      background: #fffaf6;
-    }
-
-    .alt-btn.selected {
-      border: 2px solid var(--cmt-orange);
-      background: var(--cmt-orange-soft);
-    }
-
-    .alt-cutters {
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: var(--text);
-    }
-
-    .alt-meta {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .badge {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 5px;
-      background: #e2e8f0;
-      color: #334155;
-      white-space: nowrap;
-    }
-
-    .badge.rec {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    /* Reference tables */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
+      flex-wrap: wrap;
+      gap: 6px;
       margin-top: 6px;
     }
 
-    th, td {
-      padding: 6px 8px;
-      border-bottom: 1px solid var(--border);
-      text-align: right;
+    .alt-btn {
+      padding: 4px 9px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--ink-soft);
     }
 
-    th:first-child, td:first-child {
-      text-align: left;
+    .alt-btn:hover {
+      background: var(--sunken);
+      color: var(--ink);
+    }
+
+    .alt-btn[aria-selected='true'] {
+      background: var(--sunken);
+      border-color: var(--rule-strong);
+      color: var(--ink);
       font-weight: 600;
     }
 
-    th {
-      background: #f8fafc;
-      color: var(--muted);
-      font-weight: 700;
-      font-size: 0.76rem;
-      text-transform: uppercase;
-    }
+    /* ---------- Illustration Stage ---------- */
 
-    .math-note {
-      font-size: 0.8rem;
-      color: var(--muted);
-      background: #f8fafc;
-      border-radius: 8px;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      margin-top: 12px;
-    }
-
-    .totals-box {
+    .stage {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px dashed var(--border);
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
+    }
+
+    .warn-box {
+      padding: var(--space-3);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="header-inner">
+  <header class="topbar">
+    <div class="topbar-row">
       <div class="brand">
-        <span class="brand-badge">CMT 8/923.001</span>
-        <div>
-          <h1>Slot Cutter &amp; Shim Stack Calculator</h1>
-          <p>Exact arbor stack &amp; shim combinations based on measured cutter body thicknesses</p>
-        </div>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8" />
+            <circle cx="12" cy="12" r="2.8" />
+            <path d="M12 2v2.5M20.66 17l-2.16-1.25M3.34 17l2.16-1.25" />
+          </svg>
+        </span>
+        <span>slotcutter</span>
+        <span class="brand-sub">CMT 8/923.001</span>
       </div>
     </div>
   </header>
 
-  <main class="container">
-    <!-- Left Column: Controls, Alternatives, Reference Table -->
-    <div style="display: flex; flex-direction: column; gap: 18px;">
-      <section class="card">
-        <h2 class="card-title">1. Desired Groove Setup</h2>
+  <main class="layout">
+    <!-- Controls Card -->
+    <section class="card">
+      <div class="segmented" role="radiogroup" aria-label="Cut type">
+        <button type="button" class="seg-btn" id="tabGroove" role="radio" aria-checked="true">Groove</button>
+        <button type="button" class="seg-btn" id="tabTongue" role="radio" aria-checked="false">Tongue</button>
+      </div>
 
-        <div class="control-group">
-          <div class="control-label">
-            <label for="grooveWidth">Target Groove Width (H)</label>
-            <span id="rangeHint" style="color: var(--muted); font-weight: 500; font-size: 0.8rem;">2.0 – 20.0 mm</span>
+      <!-- GROOVE -->
+      <div id="grooveControls">
+        <div class="field">
+          <label class="field-label" for="grooveWidth">Groove width</label>
+          <div class="input-wrap">
+            <input type="number" id="grooveWidth" min="2.0" max="26.0" step="0.1" value="18.0" />
+            <span class="suffix">mm</span>
           </div>
-          <div class="width-input-row">
-            <button class="step-btn" id="btnMinus" type="button" title="-0.1 mm">−0.1</button>
-            <div class="width-number-wrap">
-              <input
-                type="number"
-                id="grooveWidth"
-                class="width-number"
-                min="2.0"
-                max="20.0"
-                step="0.1"
-                value="18.0"
-              />
-              <span class="width-unit">mm</span>
-            </div>
-            <button class="step-btn" id="btnPlus" type="button" title="+0.1 mm">+0.1</button>
-          </div>
-          <input
-            type="range"
-            id="grooveSlider"
-            min="2.0"
-            max="20.0"
-            step="0.1"
-            value="18.0"
-          />
-          <div class="quick-presets" id="presetContainer">
-            <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- TONGUE -->
+      <div id="tongueControls" hidden>
+        <div class="field">
+          <label class="field-label" for="tongueWidth">Tongue thickness</label>
+          <div class="input-wrap">
+            <input type="number" id="tongueWidth" min="3.2" max="16.0" step="0.1" value="6.0" />
+            <span class="suffix">mm</span>
           </div>
         </div>
 
-        <div class="control-group">
-          <div class="control-label">
-            <label for="bearingSelect">Ball Bearing (Cutting Depth)</label>
+        <div class="field">
+          <label class="field-label" for="topCutWidth" id="topCutLabel">Shoulder width (each side)</label>
+          <div class="input-wrap">
+            <input type="number" id="topCutWidth" min="1.0" max="16.0" step="0.1" value="5.0" />
+            <span class="suffix">mm</span>
           </div>
-          <select id="bearingSelect">
-            <option value="6982-2Z">6982-2Z — Ø19 mm (Depth: 14.3 mm, H: 5.90 mm)</option>
-            <option value="608-2Z" selected>608-2Z — Ø22 mm (Depth: 12.7 mm, H: 6.00 mm)</option>
-            <option value="R8ZZ">R8ZZ — Ø28.5 mm (Depth: 9.5 mm, H: 7.90 mm)</option>
-            <option value="79103300">79103300 — Ø31.5 mm (Depth: 8.0 mm, H: 4.90 mm)</option>
-          </select>
         </div>
 
-        <div class="control-group" style="margin-bottom: 0;">
-          <div class="control-label">
-            <label for="overlapPref">Carbide Overlap Preference</label>
+        <div class="field" id="botCutGroup" hidden>
+          <label class="field-label" for="botCutWidth">Bottom shoulder width</label>
+          <div class="input-wrap">
+            <input type="number" id="botCutWidth" min="1.0" max="16.0" step="0.1" value="5.0" />
+            <span class="suffix">mm</span>
           </div>
-          <select id="overlapPref">
-            <option value="overlap" selected>Prefer carbide tooth overlap (~0.4–1.2 mm per joint)</option>
-            <option value="min_cutters">Minimize number of cutters (allow smaller overlap)</option>
-            <option value="manual_range">Prefer 1.0–1.7 mm shim gap where possible</option>
-          </select>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2 class="card-title">
-          <span>Alternative Combinations</span>
-          <span id="altCountBadge" class="badge">0 options</span>
-        </h2>
-        <div id="altList" class="alt-list"></div>
-      </section>
-
-      <section class="card">
-        <h2 class="card-title">Measured Specs Reference</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Cutter</th>
-              <th>Body (mm)</th>
-              <th>Diff (mm)</th>
-              <th>1/2 Diff (Overhang)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>2 mm</td><td>1.30</td><td>0.70</td><td>0.35</td></tr>
-            <tr><td>3 mm</td><td>1.30</td><td>1.70</td><td>0.85</td></tr>
-            <tr><td>4 mm</td><td>2.10</td><td>1.90</td><td>0.95</td></tr>
-            <tr><td>5 mm</td><td>2.90</td><td>2.10</td><td>1.05</td></tr>
-            <tr><td>6 mm</td><td>4.50</td><td>1.50</td><td>0.75</td></tr>
-          </tbody>
-        </table>
-        <div class="math-note">
-          <strong>Why body thickness matters:</strong><br/>
-          Each cutter's carbide tip overhangs its steel body by <code>1/2 Diff</code> on both sides.
-          Total groove width = <code>Bottom Overhang + All Cutter Bodies + Shims Between Cutters + Top Overhang</code>.
-        </div>
-      </section>
-    </div>
-
-    <!-- Right Column: Visual Illustration & Step-by-Step Stack -->
-    <div style="display: flex; flex-direction: column; gap: 18px;">
-      <section class="card">
-        <h2 class="card-title">
-          <span>2. Arbor Stack Illustration</span>
-          <span id="stackTitleBadge" class="badge rec">Recommended Stack</span>
-        </h2>
-
-        <div class="summary-banner" id="summaryBanner">
-          <!-- Populated by JS -->
         </div>
 
-        <div class="svg-stage" id="svgContainer">
-          <!-- SVG rendered by JS -->
-        </div>
+        <label class="switch">
+          <input type="checkbox" id="symCheck" checked />
+          <span>Symmetric shoulders</span>
+        </label>
+      </div>
 
-        <h3 style="margin: 18px 0 8px; font-size: 0.95rem;">
-          Assembly Order (From Arbor Top Shoulder &rarr; Down to Nut)
-        </h3>
-        <div id="recipeList" class="recipe-list">
-          <!-- Populated by JS -->
-        </div>
+      <!-- Cutting Depth -->
+      <div class="field">
+        <label class="field-label" for="bearingSelect">Cutting depth</label>
+        <select id="bearingSelect" class="select-input">
+          <option value="6982-2Z">14.3 mm</option>
+          <option value="608-2Z" selected>12.7 mm</option>
+          <option value="R8ZZ">9.5 mm</option>
+          <option value="79103300">8.0 mm</option>
+        </select>
+      </div>
 
-        <div id="totalsBox" class="totals-box">
-          <!-- Total shims needed -->
-        </div>
-      </section>
+      <!-- Compact Alternative Picker -->
+      <div class="alt-section" id="altSection">
+        <div class="field-label">Cutter combination</div>
+        <div class="alt-list" id="altList"></div>
+      </div>
+    </section>
+
+    <!-- Illustration Stage -->
+    <div class="stage">
+      <div id="errorBox" class="warn-box" hidden></div>
+      <div id="svgContainer" style="width: 100%; display: flex; justify-content: center;"></div>
     </div>
   </main>
 
   <script>
-    // Measured cutter data from user's table
-    const CUTTERS = [
-      { id: 2, name: "2 mm", width: 2.0, body: 1.30, diff: 0.70, overhang: 0.35, partNo: "822.320.11" },
-      { id: 3, name: "3 mm", width: 3.0, body: 1.30, diff: 1.70, overhang: 0.85, partNo: "823.330.11" },
-      { id: 4, name: "4 mm", width: 4.0, body: 2.10, diff: 1.90, overhang: 0.95, partNo: "823.340.11" },
-      { id: 5, name: "5 mm", width: 5.0, body: 2.90, diff: 2.10, overhang: 1.05, partNo: "823.350.11" },
-      { id: 6, name: "6 mm", width: 6.0, body: 4.50, diff: 1.50, overhang: 0.75, partNo: "822.360.11" }
+    // Measured cutter dimensions + exact set inventory (1x 2mm, 1x 3mm, 1x 4mm, 3x 5mm, 1x 6mm)
+    const CUTTER_SPECS = [
+      { id: 2, name: "2 mm", width: 2.0, body: 1.30, overhang: 0.35, maxQty: 1 },
+      { id: 3, name: "3 mm", width: 3.0, body: 1.30, overhang: 0.85, maxQty: 1 },
+      { id: 4, name: "4 mm", width: 4.0, body: 2.10, overhang: 0.95, maxQty: 1 },
+      { id: 5, name: "5 mm", width: 5.0, body: 2.90, overhang: 1.05, maxQty: 3 },
+      { id: 6, name: "6 mm", width: 6.0, body: 4.50, overhang: 0.75, maxQty: 1 }
     ];
 
     const BEARINGS = {
-      "6982-2Z":  { id: "6982-2Z",  od: 19.0, height: 5.90, depth: 14.3, orderNo: "791.034.00" },
-      "608-2Z":   { id: "608-2Z",   od: 22.0, height: 6.00, depth: 12.7, orderNo: "791.005.00" },
-      "R8ZZ":     { id: "R8ZZ",     od: 28.5, height: 7.90, depth: 9.5,  orderNo: "791.030.00" },
-      "79103300": { id: "79103300", od: 31.5, height: 4.90, depth: 8.0,  orderNo: "791.033.00" }
+      "6982-2Z":  { id: "6982-2Z",  od: 19.0, height: 5.90, depth: 14.3 },
+      "608-2Z":   { id: "608-2Z",   od: 22.0, height: 6.00, depth: 12.7 },
+      "R8ZZ":     { id: "R8ZZ",     od: 28.5, height: 7.90, depth: 9.5  },
+      "79103300": { id: "79103300", od: 31.5, height: 4.90, depth: 8.0  }
     };
 
-    const SHIM_SIZES = [4.0, 1.0, 0.5, 0.1]; // mm
-    const PRESETS = [2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 18, 19];
-
-    // Convert mm to integer tenths to avoid floating point issues
     const toTenths = (mm) => Math.round(mm * 10);
-    const fromTenths = (t) => (t / 10).toFixed(1);
 
-    // Decompose a shim thickness (in tenths of mm) into minimum number of shims (4.0, 1.0, 0.5, 0.1)
-    function decomposeShims(tenths) {
+    // Decompose a single shim gap (in tenths of mm).
+    // Note: there is only ONE 0.3 mm spacer in the set, so allow03 controls whether this gap can use it.
+    function decomposeShims(tenths, allow03 = false) {
       let rem = Math.max(0, Math.round(tenths));
-      const sizesTenths = [
-        { mm: "4 mm", val: 40, cls: "s4" },
-        { mm: "1 mm", val: 10, cls: "s1" },
-        { mm: "0.5 mm", val: 5, cls: "s05" },
-        { mm: "0.1 mm", val: 1, cls: "s01" }
+      const sizes = [
+        { label: "4", val: 40, max: Infinity },
+        { label: "1", val: 10, max: Infinity },
+        { label: "0.5", val: 5, max: Infinity },
+        { label: "0.3", val: 3, max: allow03 ? 1 : 0 },
+        { label: "0.1", val: 1, max: Infinity }
       ];
       const parts = [];
-      let totalCount = 0;
-      for (const s of sizesTenths) {
-        const count = Math.floor(rem / s.val);
+      const washers = [];
+      let used03 = false;
+      for (const s of sizes) {
+        if (s.max === 0) continue;
+        const count = Math.min(s.max, Math.floor(rem / s.val));
         if (count > 0) {
           parts.push({ ...s, count });
-          totalCount += count;
+          for (let i = 0; i < count; i++) washers.push(s.val);
           rem -= count * s.val;
+          if (s.val === 3) used03 = true;
         }
       }
+      const formula = parts.map((p) => (p.count > 1 ? `${p.count}×${p.label}` : `${p.label}`)).join(" + ");
       return {
         tenths: Math.round(tenths),
         mm: (Math.round(tenths) / 10).toFixed(1),
         parts,
-        totalCount
+        washers,
+        formula,
+        used03,
+        totalCount: washers.length
       };
     }
 
-    // Generate all non-empty subsets of CUTTERS, ordered thickest-to-thinnest from top D -> bottom A
-    // matching CMT manual diagram (thickest cutter at top D, thinnest cutter at bottom A near bearing)
-    function getAllSubsets() {
-      const subsets = [];
-      const n = CUTTERS.length;
-      for (let mask = 1; mask < (1 << n); mask++) {
-        const picked = [];
-        for (let i = 0; i < n; i++) {
-          if (mask & (1 << i)) picked.push(CUTTERS[i]);
-        }
-        // Sort descending by width so D (top) is thickest, A (bottom) is thinnest (like CMT manual illustration)
-        picked.sort((a, b) => b.width - a.width);
-        subsets.push(picked);
-      }
-      return subsets;
+    // Decompose an array of shim gaps across the arbor, using the single 0.3mm spacer in at most ONE gap
+    function decomposeGapList(gapsTenths, canUse03 = true) {
+      let available03 = canUse03;
+      return gapsTenths.map((t) => {
+        const d = decomposeShims(t, available03);
+        if (d.used03) available03 = false;
+        return d;
+      });
     }
 
-    const ALL_SUBSETS = getAllSubsets();
-
-    /**
-     * Given a target groove width (in mm), find all valid cutter combinations & shim allocations.
-     *
-     * Math:
-     * For ordered cutters c_0 (top) ... c_{k-1} (bottom):
-     * Total Groove Width = overhang(c_0) + sum(body(c_i)) + sum(shim_{i}) + overhang(c_{k-1})
-     * Equivalently:
-     * Total Groove Width = sum(width(c_i)) - sum(overlap_{i})
-     * where for each joint i between c_i and c_{i+1}:
-     *   maxShim_i = overhang(c_i) + overhang(c_{i+1})   (when overlap_i == 0)
-     *   overlap_i = (overhang(c_i) + overhang(c_{i+1})) - shim_i
-     */
-    function solveForWidth(targetMm, prefMode) {
-      const targetT = toTenths(targetMm);
-      const solutions = [];
-
-      // 1. Check single cutter exact match
-      for (const c of CUTTERS) {
-        if (toTenths(c.width) === targetT) {
-          const bearingShimT = c.overhang >= 1.0 ? 15 : 10; // 1.5mm for 5mm cutter (overhang 1.05mm), 1.0mm for others
-          solutions.push({
-            cutters: [c],
-            gapsTenths: [],
-            gapsDecomposed: [],
-            overlapsMm: [],
-            totalShimTenths: 0,
-            totalOverlapMm: 0,
-            minOverlapMm: 0,
-            bearingShim: decomposeShims(bearingShimT),
-            score: 1000
-          });
+    function getAllMultisets() {
+      const multisets = [];
+      function build(idx, counts, picked) {
+        if (idx === CUTTER_SPECS.length) {
+          if (picked.length > 0 && picked.length <= 5) {
+            const sorted = [...picked].sort((a, b) => b.width - a.width);
+            multisets.push({ counts: { ...counts }, cutters: sorted });
+          }
+          return;
+        }
+        const spec = CUTTER_SPECS[idx];
+        for (let q = 0; q <= spec.maxQty; q++) {
+          counts[spec.id] = q;
+          for (let k = 0; k < q; k++) picked.push(spec);
+          build(idx + 1, counts, picked);
+          for (let k = 0; k < q; k++) picked.pop();
         }
       }
-
-      // 2. Check multi-cutter combinations (k >= 2)
-      for (const subset of ALL_SUBSETS) {
-        if (subset.length < 2) continue;
-        const k = subset.length;
-
-        // Calculate base width without any shims (all bodies + outer overhangs)
-        // Notice: overhang(top) + sum(bodies) + overhang(bottom)
-        // In hundredths of mm:
-        const topOverhangH = Math.round(subset[0].overhang * 100);
-        const botOverhangH = Math.round(subset[k - 1].overhang * 100);
-        const bodiesH = subset.reduce((acc, c) => acc + Math.round(c.body * 100), 0);
-        const baseWidthH = topOverhangH + bodiesH + botOverhangH;
-        const targetH = targetT * 10;
-
-        // Total shim thickness needed across (k - 1) gaps (in hundredths of mm)
-        const neededShimH = targetH - baseWidthH;
-
-        // Since shims are in 0.1mm (10 hundredths) increments, neededShimH must be divisible by 10
-        if (neededShimH % 10 !== 0) continue;
-        const totalShimT = neededShimH / 10;
-
-        // Minimum 0.1mm shim per gap -> totalShimT >= (k - 1)
-        if (totalShimT < k - 1) continue;
-
-        // For each gap i (0 .. k-2), calculate max allowed shim so carbide edges at least touch (overlap >= 0)
-        // Joint overhang sum in tenths:
-        // Note: overhang(c_i) + overhang(c_{i+1}) is always a multiple of 0.1mm because every cutter overhang ends in .x5!
-        // Specifically: 0.35, 0.85, 0.95, 1.05, 0.75 -> sum of ANY two ends in .00 or .10!
-        const maxGapT = [];
-        let maxPossibleShimT = 0;
-        for (let i = 0; i < k - 1; i++) {
-          const jointMaxT = Math.round((subset[i].overhang + subset[i + 1].overhang) * 10);
-          maxGapT.push(jointMaxT);
-          maxPossibleShimT += jointMaxT;
-        }
-
-        // If totalShimT > maxPossibleShimT, the cutters would have a gap (uncut wood ridge) between carbide tips!
-        if (totalShimT > maxPossibleShimT) continue;
-
-        // Distribute totalShimT across the (k - 1) gaps so each gap has:
-        // 1 <= gapT[i] <= maxGapT[i]
-        // and overlaps (maxGapT[i] - gapT[i]) are as balanced & clean (fewer shim pieces) as possible.
-        const bestGapAllocation = allocateShimsAcrossGaps(totalShimT, maxGapT);
-        if (!bestGapAllocation) continue;
-
-        const gapsDecomposed = bestGapAllocation.map((t) => decomposeShims(t));
-        const overlapsMm = bestGapAllocation.map((t, i) => (maxGapT[i] - t) / 10);
-        const totalOverlapMm = overlapsMm.reduce((a, b) => a + b, 0);
-        const minOverlapMm = Math.min(...overlapsMm);
-        const minShimMm = Math.min(...bestGapAllocation) / 10;
-        const maxShimMm = Math.max(...bestGapAllocation) / 10;
-        const totalShimPieces = gapsDecomposed.reduce((a, g) => a + g.totalCount, 0);
-
-        // Bottom cutter is subset[k - 1]; determine safe shim between bottom cutter and bearing
-        const botCutter = subset[k - 1];
-        const bearingShimT = botCutter.overhang >= 1.0 ? 15 : 10;
-
-        // Score the solution based on user preference
-        let score = 0;
-
-        if (prefMode === "overlap") {
-          // User prefers positive overlap of carbide teeth (e.g., ~0.4mm to 1.1mm per joint, like 6+5mm with 0.8mm shim -> 1.0mm overlap)
-          const avgOverlap = totalOverlapMm / (k - 1);
-          if (minOverlapMm >= 0.2) score += 300;
-          else if (minOverlapMm >= 0.1) score += 180;
-          else score += 20; // 0.0mm kissing overlap is valid fallback, but less preferred
-
-          // Ideal average overlap around 0.5 - 1.0 mm
-          score -= Math.abs(avgOverlap - 0.75) * 90;
-
-          // Prefer practical shim thickness (>= 0.4mm per gap so carbide tips stay well clear of adjacent bodies)
-          if (minShimMm >= 0.5) score += 120;
-          else if (minShimMm >= 0.3) score += 70;
-          else if (minShimMm < 0.2) score -= 120;
-
-          // Prefer fewer cutters once healthy overlap is satisfied
-          score -= k * 45;
-          score -= totalShimPieces * 4;
-        } else if (prefMode === "min_cutters") {
-          score += (6 - k) * 200;
-          if (minOverlapMm >= 0.1) score += 60;
-          if (minShimMm >= 0.4) score += 40;
-          score -= totalShimPieces * 5;
-        } else if (prefMode === "manual_range") {
-          // Prefer shim gaps close to 1.0 - 1.7 mm
-          const inManualRange = bestGapAllocation.every((t) => t >= 8 && t <= 17);
-          if (inManualRange) score += 250;
-          if (minOverlapMm >= 0.1) score += 100;
-          score -= k * 40;
-          score -= totalShimPieces * 4;
-        }
-
-        solutions.push({
-          cutters: subset,
-          gapsTenths: bestGapAllocation,
-          gapsDecomposed,
-          overlapsMm,
-          totalShimTenths: totalShimT,
-          totalOverlapMm,
-          minOverlapMm,
-          bearingShim: decomposeShims(bearingShimT),
-          score
-        });
-      }
-
-      solutions.sort((a, b) => b.score - a.score);
-      return solutions;
+      build(0, {}, []);
+      return multisets;
     }
 
-    // Find the best distribution of totalShimT across m gaps where 1 <= g_i <= maxGapT[i]
-    function allocateShimsAcrossGaps(totalShimT, maxGapT) {
+    const ALL_MULTISETS = getAllMultisets();
+
+    function canCombineStacks(countsA, countsB) {
+      for (const spec of CUTTER_SPECS) {
+        if ((countsA[spec.id] || 0) + (countsB[spec.id] || 0) > spec.maxQty) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function allocateShimsAcrossGaps(totalShimT, maxGapT, canUse03 = true) {
       const m = maxGapT.length;
       let best = null;
       let bestCost = Infinity;
@@ -830,21 +539,17 @@
       function dfs(idx, remT, current) {
         if (idx === m) {
           if (remT !== 0) return;
-          // Evaluate cost: balance overlaps across joints + keep shims >= 4 tenths + minimize total shim count
           let cost = 0;
           const overlaps = current.map((g, i) => maxGapT[i] - g);
           const avgOv = overlaps.reduce((a, b) => a + b, 0) / m;
+          const decomps = decomposeGapList(current, canUse03);
           for (let i = 0; i < m; i++) {
             const g = current[i];
             const ov = overlaps[i];
-            // Penalize 0 overlap if positive overlap is possible
             if (ov === 0) cost += 50;
-            // Penalize very thin shim (< 0.3mm)
             if (g < 3) cost += (3 - g) * 60;
-            // Balance overlaps across joints
             cost += Math.pow(ov - avgOv, 2) * 8;
-            // Slight preference for fewer physical shim washers
-            cost += decomposeShims(g).totalCount * 2;
+            cost += decomps[i].totalCount * 3;
           }
           if (cost < bestCost) {
             bestCost = cost;
@@ -852,12 +557,10 @@
           }
           return;
         }
-
-        const maxRemainingAfter = maxGapT.slice(idx + 1).reduce((a, b) => a + b, 0);
-        const minRemainingAfter = m - 1 - idx;
-        const low = Math.max(1, remT - maxRemainingAfter);
-        const high = Math.min(maxGapT[idx], remT - minRemainingAfter);
-
+        const maxRem = maxGapT.slice(idx + 1).reduce((a, b) => a + b, 0);
+        const minRem = m - 1 - idx;
+        const low = Math.max(1, remT - maxRem);
+        const high = Math.min(maxGapT[idx], remT - minRem);
         for (let g = low; g <= high; g++) {
           current.push(g);
           dfs(idx + 1, remT - g, current);
@@ -869,213 +572,356 @@
       return best;
     }
 
-    // UI State
-    let currentWidth = 18.0;
+    // Solve exact width stack (for Groove mode)
+    function solveExactStack(targetMm, orientBottomToBearing = true) {
+      const targetT = toTenths(targetMm);
+      const solutions = [];
+
+      for (const c of CUTTER_SPECS) {
+        if (toTenths(c.width) === targetT) {
+          solutions.push({
+            counts: { [c.id]: 1 },
+            cutters: [c],
+            gapsTenths: [],
+            gapsDecomposed: [],
+            totalShimTenths: 0,
+            actualWidthMm: c.width,
+            used03: false,
+            shimPieces: 0,
+            score: 1000
+          });
+        }
+      }
+
+      for (const sub of ALL_MULTISETS) {
+        if (sub.cutters.length < 2) continue;
+        const ordered = orientBottomToBearing ? [...sub.cutters] : [...sub.cutters].reverse();
+        const k = ordered.length;
+
+        const topOverhangH = Math.round(ordered[0].overhang * 100);
+        const botOverhangH = Math.round(ordered[k - 1].overhang * 100);
+        const bodiesH = ordered.reduce((acc, c) => acc + Math.round(c.body * 100), 0);
+        const neededShimH = targetT * 10 - (topOverhangH + bodiesH + botOverhangH);
+
+        if (neededShimH % 10 !== 0) continue;
+        const totalShimT = neededShimH / 10;
+        if (totalShimT < k - 1) continue;
+
+        const maxGapT = [];
+        let maxPossibleShimT = 0;
+        for (let i = 0; i < k - 1; i++) {
+          const jMax = Math.round((ordered[i].overhang + ordered[i + 1].overhang) * 10);
+          maxGapT.push(jMax);
+          maxPossibleShimT += jMax;
+        }
+        if (totalShimT > maxPossibleShimT) continue;
+
+        const alloc = allocateShimsAcrossGaps(totalShimT, maxGapT, true);
+        if (!alloc) continue;
+
+        const gapsDecomposed = decomposeGapList(alloc, true);
+        const used03 = gapsDecomposed.some((g) => g.used03);
+        const overlapsMm = alloc.map((t, i) => (maxGapT[i] - t) / 10);
+        const totalOverlapMm = overlapsMm.reduce((a, b) => a + b, 0);
+        const minOverlapMm = Math.min(...overlapsMm);
+        const minShimMm = Math.min(...alloc) / 10;
+        const shimPieces = gapsDecomposed.reduce((a, g) => a + g.totalCount, 0);
+
+        let score = 0;
+        const avgOverlap = totalOverlapMm / (k - 1);
+        if (minOverlapMm >= 0.2) score += 300;
+        else if (minOverlapMm >= 0.1) score += 180;
+        else score += 20;
+
+        score -= Math.abs(avgOverlap - 0.75) * 90;
+        if (minShimMm >= 0.5) score += 120;
+        else if (minShimMm >= 0.3) score += 70;
+        else if (minShimMm < 0.2) score -= 120;
+
+        score -= k * 45;
+        score -= shimPieces * 4;
+
+        solutions.push({
+          counts: sub.counts,
+          cutters: ordered,
+          gapsTenths: alloc,
+          gapsDecomposed,
+          totalShimTenths: totalShimT,
+          actualWidthMm: targetT / 10,
+          used03,
+          shimPieces,
+          score
+        });
+      }
+
+      solutions.sort((a, b) => b.score - a.score);
+      return solutions;
+    }
+
+    // Solve shoulder stack (for Tongue mode): any stack >= minMm works
+    function solveShoulderStack(minMm, orientBottomToBearing = true) {
+      const minT = toTenths(minMm);
+      const candidates = [];
+
+      for (const c of CUTTER_SPECS) {
+        const wT = toTenths(c.width);
+        if (wT >= minT) {
+          const excessMm = (wT - minT) / 10;
+          candidates.push({
+            counts: { [c.id]: 1 },
+            cutters: [c],
+            gapsTenths: [],
+            gapsDecomposed: [],
+            totalShimTenths: 0,
+            actualWidthMm: c.width,
+            used03: false,
+            shimPieces: 0,
+            score: 1200 - excessMm * 25
+          });
+        }
+      }
+
+      for (const sub of ALL_MULTISETS) {
+        if (sub.cutters.length < 2 || sub.cutters.length > 3) continue;
+        const ordered = orientBottomToBearing ? [...sub.cutters] : [...sub.cutters].reverse();
+        const k = ordered.length;
+
+        const topOverhangH = Math.round(ordered[0].overhang * 100);
+        const botOverhangH = Math.round(ordered[k - 1].overhang * 100);
+        const bodiesH = ordered.reduce((acc, c) => acc + Math.round(c.body * 100), 0);
+        const baseWidthT = (topOverhangH + bodiesH + botOverhangH) / 10;
+
+        const maxGapT = [];
+        let maxPossibleShimT = 0;
+        for (let i = 0; i < k - 1; i++) {
+          const jMax = Math.round((ordered[i].overhang + ordered[i + 1].overhang) * 10);
+          maxGapT.push(jMax);
+          maxPossibleShimT += jMax;
+        }
+
+        const neededMinShimT = Math.max(k - 1, Math.ceil(minT - baseWidthT));
+        if (neededMinShimT > maxPossibleShimT) continue;
+
+        let bestForSub = null;
+        for (let totT = neededMinShimT; totT <= maxPossibleShimT; totT++) {
+          const actualT = baseWidthT + totT;
+          if (actualT < minT) continue;
+          if (actualT > minT + 25) break;
+
+          // Keep 0.3mm spacer free for bearing shims unless needed
+          const alloc = allocateShimsAcrossGaps(totT, maxGapT, false);
+          if (!alloc) continue;
+          const gapsDecomposed = decomposeGapList(alloc, false);
+          const overlapsMm = alloc.map((t, i) => (maxGapT[i] - t) / 10);
+          const minOverlapMm = Math.min(...overlapsMm);
+          const minShimMm = Math.min(...alloc) / 10;
+          if (minOverlapMm < 0.1 || minShimMm < 0.3) continue;
+
+          const shimPieces = gapsDecomposed.reduce((a, g) => a + g.totalCount, 0);
+          const excessMm = (actualT - minT) / 10;
+          const score = 600 - k * 110 - shimPieces * 18 - excessMm * 15;
+
+          if (!bestForSub || score > bestForSub.score) {
+            bestForSub = {
+              counts: sub.counts,
+              cutters: ordered,
+              gapsTenths: alloc,
+              gapsDecomposed,
+              totalShimTenths: totT,
+              actualWidthMm: actualT / 10,
+              used03: false,
+              shimPieces,
+              score
+            };
+          }
+        }
+        if (bestForSub) candidates.push(bestForSub);
+      }
+
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates;
+    }
+
+    function solveGrooveMode(grooveMm) {
+      const stacks = solveExactStack(grooveMm, true);
+      return stacks.map((st) => {
+        const botCutter = st.cutters[st.cutters.length - 1];
+        const bearingShimT = botCutter.overhang >= 1.0 ? 15 : 10;
+        return {
+          mode: "groove",
+          stack: st,
+          bearingShim: decomposeShims(bearingShimT, !st.used03),
+          score: st.score
+        };
+      });
+    }
+
+    // Split total bearing shim (in tenths) into top and bottom bearing shims, using at most ONE 0.3mm spacer total
+    function splitBearingShims(totalBrgShimT, topInnerOverhang, botInnerOverhang, canUse03 = true) {
+      let best = null;
+      let bestCost = Infinity;
+      const idealTopT = Math.max(1, Math.round((totalBrgShimT * topInnerOverhang) / (topInnerOverhang + botInnerOverhang)));
+
+      for (let topT = 1; topT <= totalBrgShimT - 1; topT++) {
+        const botT = totalBrgShimT - topT;
+        const [dTop, dBot] = decomposeGapList([topT, botT], canUse03);
+        let cost = (dTop.totalCount + dBot.totalCount) * 6 + Math.abs(topT - idealTopT) * 1.5;
+        if (topT < topInnerOverhang * 10) cost += (topInnerOverhang * 10 - topT) * 15;
+        if (botT < botInnerOverhang * 10) cost += (botInnerOverhang * 10 - botT) * 15;
+        if (cost < bestCost) {
+          bestCost = cost;
+          best = { top: dTop, bot: dBot };
+        }
+      }
+      return best;
+    }
+
+    function solveTongueMode(tongueMm, topShoulderMm, botShoulderMm, bearing) {
+      const topStacks = solveShoulderStack(topShoulderMm, true);
+      const botStacks = solveShoulderStack(botShoulderMm, false);
+      const tongueT = toTenths(tongueMm);
+      const bearingHeightT = toTenths(bearing.height);
+
+      const results = [];
+      let bearingTooTallError = false;
+      let inventoryError = false;
+
+      if (topStacks.length === 0 || botStacks.length === 0) {
+        return { solutions: [], error: "Shoulder width exceeds capacity of available cutters." };
+      }
+
+      for (const topSt of topStacks) {
+        for (const botSt of botStacks) {
+          if (!canCombineStacks(topSt.counts, botSt.counts)) {
+            inventoryError = true;
+            continue;
+          }
+
+          const topInner = topSt.cutters[topSt.cutters.length - 1];
+          const botInner = botSt.cutters[0];
+          const innerOverhangSumT = Math.round((topInner.overhang + botInner.overhang) * 10);
+          const totalBrgShimT = tongueT - bearingHeightT + innerOverhangSumT;
+
+          if (totalBrgShimT < 2) {
+            bearingTooTallError = true;
+            continue;
+          }
+
+          const canUse03 = !topSt.used03 && !botSt.used03;
+          const split = splitBearingShims(totalBrgShimT, topInner.overhang, botInner.overhang, canUse03);
+          if (!split) continue;
+
+          const totalBrgPieces = split.top.totalCount + split.bot.totalCount;
+          let score = topSt.score + botSt.score - totalBrgPieces * 6;
+          if (topShoulderMm === botShoulderMm && topSt.cutters.map((c) => c.id).join() === botSt.cutters.map((c) => c.id).join()) {
+            score += 35;
+          }
+
+          results.push({
+            mode: "tongue",
+            topStack: topSt,
+            botStack: botSt,
+            topBrgShim: split.top,
+            botBrgShim: split.bot,
+            score
+          });
+        }
+      }
+
+      results.sort((a, b) => b.score - a.score);
+
+      let error = null;
+      if (results.length === 0) {
+        if (bearingTooTallError) {
+          error = `Cutting depth ${bearing.depth} mm (bearing ${bearing.id}, H ${bearing.height.toFixed(1)} mm) is too tall for a ${tongueMm.toFixed(1)} mm tongue. Try 8.0 mm depth (H 4.9 mm) or increase tongue thickness.`;
+        } else if (inventoryError) {
+          error = `Not enough cutters in the set to form ${topShoulderMm.toFixed(1)} mm and ${botShoulderMm.toFixed(1)} mm shoulders simultaneously.`;
+        } else {
+          error = `No valid combination found.`;
+        }
+      }
+
+      return { solutions: results, error };
+    }
+
+    // State
+    let mode = "groove";
+    let grooveWidth = 18.0;
+    let tongueWidth = 6.0;
+    let topCutWidth = 5.0;
+    let botCutWidth = 5.0;
+    let symmetric = true;
     let currentSolutions = [];
-    let selectedSolutionIdx = 0;
+    let selectedIdx = 0;
 
-    // DOM Elements
-    const grooveWidthInput = document.getElementById("grooveWidth");
-    const grooveSlider = document.getElementById("grooveSlider");
-    const btnMinus = document.getElementById("btnMinus");
-    const btnPlus = document.getElementById("btnPlus");
-    const presetContainer = document.getElementById("presetContainer");
-    const bearingSelect = document.getElementById("bearingSelect");
-    const overlapPref = document.getElementById("overlapPref");
-    const summaryBanner = document.getElementById("summaryBanner");
-    const svgContainer = document.getElementById("svgContainer");
-    const recipeList = document.getElementById("recipeList");
-    const totalsBox = document.getElementById("totalsBox");
+    // Elements
+    const tabGroove = document.getElementById("tabGroove");
+    const tabTongue = document.getElementById("tabTongue");
+    const grooveControls = document.getElementById("grooveControls");
+    const tongueControls = document.getElementById("tongueControls");
+
+    const grooveWidthEl = document.getElementById("grooveWidth");
+    const tongueWidthEl = document.getElementById("tongueWidth");
+    const topCutWidthEl = document.getElementById("topCutWidth");
+    const botCutWidthEl = document.getElementById("botCutWidth");
+    const symCheckEl = document.getElementById("symCheck");
+    const botCutGroupEl = document.getElementById("botCutGroup");
+    const topCutLabelEl = document.getElementById("topCutLabel");
+    const bearingSelectEl = document.getElementById("bearingSelect");
+
+    const altSection = document.getElementById("altSection");
     const altList = document.getElementById("altList");
-    const altCountBadge = document.getElementById("altCountBadge");
-    const stackTitleBadge = document.getElementById("stackTitleBadge");
+    const errorBox = document.getElementById("errorBox");
+    const svgContainer = document.getElementById("svgContainer");
 
-    function initPresets() {
-      presetContainer.innerHTML = "";
-      PRESETS.forEach((val) => {
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = "preset-chip" + (val === currentWidth ? " active" : "");
-        chip.textContent = `${val} mm`;
-        chip.addEventListener("click", () => setGrooveWidth(val));
-        presetContainer.appendChild(chip);
-      });
+    function updateCalculation() {
+      const bearing = BEARINGS[bearingSelectEl.value];
+      selectedIdx = 0;
+
+      if (mode === "groove") {
+        currentSolutions = solveGrooveMode(grooveWidth);
+        if (currentSolutions.length === 0) {
+          showError(`No single-pass combination for ${grooveWidth.toFixed(1)} mm.`);
+          return;
+        }
+        hideError();
+        renderAll();
+      } else {
+        const bWidth = symmetric ? topCutWidth : botCutWidth;
+        const res = solveTongueMode(tongueWidth, topCutWidth, bWidth, bearing);
+        currentSolutions = res.solutions;
+        if (res.error || currentSolutions.length === 0) {
+          showError(res.error);
+          return;
+        }
+        hideError();
+        renderAll();
+      }
     }
 
-    function setGrooveWidth(val) {
-      const clamped = Math.max(2.0, Math.min(20.0, Math.round(val * 10) / 10));
-      currentWidth = clamped;
-      grooveWidthInput.value = clamped.toFixed(1);
-      grooveSlider.value = clamped.toFixed(1);
-
-      Array.from(presetContainer.children).forEach((chip) => {
-        chip.classList.toggle("active", parseFloat(chip.textContent) === clamped);
-      });
-
-      recalculate();
+    function showError(msg) {
+      errorBox.hidden = false;
+      errorBox.textContent = msg;
+      svgContainer.hidden = true;
+      altSection.hidden = true;
     }
 
-    function recalculate() {
-      const pref = overlapPref.value;
-      currentSolutions = solveForWidth(currentWidth, pref);
-      selectedSolutionIdx = 0;
-      renderAll();
+    function hideError() {
+      errorBox.hidden = true;
+      svgContainer.hidden = false;
+      altSection.hidden = currentSolutions.length <= 1;
     }
 
     function renderAll() {
-      const bearing = BEARINGS[bearingSelect.value];
-      altCountBadge.textContent = `${currentSolutions.length} valid stack${currentSolutions.length === 1 ? "" : "s"}`;
+      const bearing = BEARINGS[bearingSelectEl.value];
+      const sol = currentSolutions[selectedIdx];
 
-      if (currentSolutions.length === 0) {
-        summaryBanner.innerHTML = `
-          <div style="color:#b91c1c; font-weight:700;">
-            No exact single-pass combination found for ${currentWidth.toFixed(1)} mm. Try adjusting by 0.1 mm or making two passes.
-          </div>
-        `;
-        svgContainer.innerHTML = "";
-        recipeList.innerHTML = "";
-        totalsBox.innerHTML = "";
-        altList.innerHTML = "";
-        return;
+      if (mode === "groove") {
+        renderGrooveSvg(sol, bearing);
+      } else {
+        renderTongueSvg(sol, bearing);
       }
-
-      const sol = currentSolutions[selectedSolutionIdx];
-      stackTitleBadge.textContent = selectedSolutionIdx === 0 ? "Recommended Stack" : `Option #${selectedSolutionIdx + 1}`;
-      stackTitleBadge.className = "badge" + (selectedSolutionIdx === 0 ? " rec" : "");
-
-      renderSummary(sol, bearing);
-      renderSvg(sol, bearing);
-      renderRecipe(sol, bearing);
       renderAlternatives();
-    }
-
-    function renderSummary(sol, bearing) {
-      const cutterNames = sol.cutters.map((c) => `${c.id}mm`).join(" + ");
-      const sumNominal = sol.cutters.reduce((a, c) => a + c.width, 0);
-      const betweenShimsMm = (sol.totalShimTenths / 10).toFixed(1);
-
-      summaryBanner.innerHTML = `
-        <div class="summary-metric">
-          <span class="lbl">Groove Width</span>
-          <span class="val accent">${currentWidth.toFixed(1)} mm</span>
-        </div>
-        <div class="summary-metric">
-          <span class="lbl">Cutters Used (${sol.cutters.length})</span>
-          <span class="val">${cutterNames}</span>
-        </div>
-        <div class="summary-metric">
-          <span class="lbl">Inter-Cutter Shims</span>
-          <span class="val">${betweenShimsMm} mm</span>
-        </div>
-        <div class="summary-metric">
-          <span class="lbl">Total Carbide Overlap</span>
-          <span class="val">${sol.totalOverlapMm.toFixed(2)} mm</span>
-        </div>
-        <div class="summary-metric">
-          <span class="lbl">Cutting Depth</span>
-          <span class="val">${bearing.depth} mm</span>
-        </div>
-      `;
-    }
-
-    function renderShimPillsHtml(decomp) {
-      if (!decomp || decomp.parts.length === 0) return `<span class="badge">0 mm</span>`;
-      return decomp.parts
-        .map((p) => `<span class="shim-pill ${p.cls}">${p.count}&times; ${p.mm}</span>`)
-        .join("");
-    }
-
-    function renderRecipe(sol, bearing) {
-      const items = [];
-      const labels = ["A", "B", "C", "D", "E"];
-      const k = sol.cutters.length;
-
-      // Top to bottom on the arbor (matching the CMT illustration)
-      sol.cutters.forEach((c, idx) => {
-        const letter = labels[k - 1 - idx] || "";
-        items.push(`
-          <div class="recipe-item cutter">
-            <div class="recipe-left">
-              <span class="step-tag">${letter}</span>
-              <div>
-                <div class="recipe-title">${c.name} Slot Cutter <span style="font-weight:500; color:var(--muted); font-size:0.82rem;">(${c.partNo})</span></div>
-                <div class="recipe-sub">Body: ${c.body.toFixed(2)} mm &bull; Carbide overhang: ${c.overhang.toFixed(2)} mm per side</div>
-              </div>
-            </div>
-            <span class="badge" style="background:#ffedd5; color:#9a3412;">Edge: ${c.width.toFixed(1)} mm</span>
-          </div>
-        `);
-
-        // Shim stack between cutter idx and cutter idx + 1
-        if (idx < k - 1) {
-          const gap = sol.gapsDecomposed[idx];
-          const ov = sol.overlapsMm[idx];
-          items.push(`
-            <div class="recipe-item shim">
-              <div class="recipe-left">
-                <span class="step-tag">SHIM</span>
-                <div>
-                  <div class="recipe-title">${gap.mm} mm Shim Stack Between Cutters</div>
-                  <div class="recipe-sub">Carbide teeth overlap by <strong>${ov.toFixed(2)} mm</strong> (stagger wings rotationally)</div>
-                </div>
-              </div>
-              <div class="shim-pills">${renderShimPillsHtml(gap)}</div>
-            </div>
-          `);
-        }
-      });
-
-      // Mandatory shim between bottom cutter A and Ball Bearing
-      const botCutter = sol.cutters[k - 1];
-      items.push(`
-        <div class="recipe-item shim">
-          <div class="recipe-left">
-            <span class="step-tag">SHIM</span>
-            <div>
-              <div class="recipe-title">${sol.bearingShim.mm} mm Bearing Clearance Shim</div>
-              <div class="recipe-sub">Protects bearing from ${botCutter.name} cutter's ${botCutter.overhang.toFixed(2)} mm carbide overhang</div>
-            </div>
-          </div>
-          <div class="shim-pills">${renderShimPillsHtml(sol.bearingShim)}</div>
-        </div>
-      `);
-
-      // Ball Bearing
-      items.push(`
-        <div class="recipe-item bearing">
-          <div class="recipe-left">
-            <span class="step-tag">BRG</span>
-            <div>
-              <div class="recipe-title">Bearing ${bearing.id} (&Oslash;${bearing.od} mm)</div>
-              <div class="recipe-sub">Height: ${bearing.height.toFixed(2)} mm &bull; Gives ${bearing.depth} mm slot depth &bull; Followed by black washers &amp; nut</div>
-            </div>
-          </div>
-          <span class="badge">Depth ${bearing.depth} mm</span>
-        </div>
-      `);
-
-      recipeList.innerHTML = items.join("");
-
-      // Aggregate total shim count across the entire setup (inter-cutter + bearing shim)
-      const tally = { "4 mm": { count: 0, cls: "s4" }, "1 mm": { count: 0, cls: "s1" }, "0.5 mm": { count: 0, cls: "s05" }, "0.1 mm": { count: 0, cls: "s01" } };
-      sol.gapsDecomposed.forEach((g) => {
-        g.parts.forEach((p) => { tally[p.mm].count += p.count; });
-      });
-      sol.bearingShim.parts.forEach((p) => {
-        tally[p.mm].count += p.count;
-      });
-
-      const totalPills = Object.entries(tally)
-        .filter(([, v]) => v.count > 0)
-        .map(([mm, v]) => `<span class="shim-pill ${v.cls}">${v.count}&times; ${mm}</span>`)
-        .join("");
-
-      totalsBox.innerHTML = `
-        <div style="font-size:0.85rem; font-weight:700; color:var(--muted);">
-          Total Shims Needed (incl. bearing shim):
-        </div>
-        <div class="shim-pills">${totalPills}</div>
-      `;
     }
 
     function renderAlternatives() {
@@ -1083,257 +929,409 @@
       currentSolutions.slice(0, 6).forEach((sol, idx) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "alt-btn" + (idx === selectedSolutionIdx ? " selected" : "");
-        const cutterStr = sol.cutters.map((c) => `${c.id}mm`).join(" + ");
-        const gapsStr = sol.gapsDecomposed.length
-          ? sol.gapsDecomposed.map((g) => `${g.mm}mm`).join(", ")
-          : "no inter-cutter shims";
+        btn.className = "alt-btn";
+        btn.setAttribute("aria-selected", idx === selectedIdx ? "true" : "false");
 
-        btn.innerHTML = `
-          <div>
-            <div class="alt-cutters">${cutterStr}</div>
-            <div class="alt-meta">Shims: ${gapsStr} &bull; Overlap: ${sol.totalOverlapMm.toFixed(1)} mm</div>
-          </div>
-          <span class="badge ${idx === 0 ? "rec" : ""}">${idx === 0 ? "Best" : `${sol.cutters.length} cutters`}</span>
-        `;
+        if (sol.mode === "groove") {
+          btn.textContent = sol.stack.cutters.map((c) => `${c.id}`).join(" + ") + " mm";
+        } else {
+          const topStr = sol.topStack.cutters.map((c) => `${c.id}`).join("+");
+          const botStr = sol.botStack.cutters.map((c) => `${c.id}`).join("+");
+          btn.textContent = `${topStr} / ${botStr} mm`;
+        }
+
         btn.addEventListener("click", () => {
-          selectedSolutionIdx = idx;
+          selectedIdx = idx;
           renderAll();
         });
         altList.appendChild(btn);
       });
     }
 
-    // Render accurate, scaled SVG cross-section matching the CMT diagram + wood groove profile
-    function renderSvg(sol, bearing) {
-      const scale = 12; // 12 px per 1 mm of vertical height
-      const cx = 230;   // Arbor centerline X
-      const cutterDiamPx = 290; // 47.6mm cutter diameter scaled horizontally for clarity
-      const arborShaftW = 48;
-      const carbideW = 44;
-
-      // Calculate total vertical stack height in mm to size the SVG nicely
-      const k = sol.cutters.length;
-      const topOverhang = sol.cutters[0].overhang;
-      const botOverhang = sol.cutters[k - 1].overhang;
-      const bodiesSum = sol.cutters.reduce((a, c) => a + c.body, 0);
-      const interShimsSum = sol.totalShimTenths / 10;
-      const bearingShimMm = sol.bearingShim.tenths / 10;
-
-      const stackStartY = 88; // Top of first cutter's steel body
-      const topCarbideTipY = stackStartY - topOverhang * scale;
-      const botCarbideTipY = topCarbideTipY + currentWidth * scale;
-
-      const svgHeight = Math.max(390, Math.round(botCarbideTipY + (bearingShimMm + bearing.height) * scale + 115));
-
-      let svgParts = [];
-
-      // Background grid lines
-      svgParts.push(`
+    function svgDefs() {
+      return `
         <defs>
-          <linearGradient id="shankGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#1f242b"/>
-            <stop offset="35%" stop-color="#4b5563"/>
-            <stop offset="100%" stop-color="#181c22"/>
-          </linearGradient>
-          <linearGradient id="threadGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#9ca3af"/>
-            <stop offset="50%" stop-color="#f3f4f6"/>
-            <stop offset="100%" stop-color="#6b7280"/>
-          </linearGradient>
-          <linearGradient id="orangeBody" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ff7a29"/>
-            <stop offset="100%" stop-color="#e05606"/>
-          </linearGradient>
-          <linearGradient id="woodGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#ffdeba"/>
-            <stop offset="100%" stop-color="#eab676"/>
-          </linearGradient>
+          <pattern id="woodGrain" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="7" height="7" fill="var(--sunken)" />
+            <line x1="0" y1="0" x2="0" y2="7" stroke="var(--rule-strong)" stroke-width="1.5" />
+          </pattern>
         </defs>
-      `);
-
-      // Top Arbor Shank
-      const shoulderY = stackStartY;
-      svgParts.push(`
-        <!-- Arbor Shank -->
-        <rect x="${cx - 28}" y="12" width="56" height="${shoulderY - 22}" rx="4" fill="url(#shankGrad)" />
-        <rect x="${cx - 34}" y="${shoulderY - 12}" width="68" height="12" rx="2" fill="url(#shankGrad)" />
-      `);
-
-      // Threaded Arbor Core running down through cutters, shims, bearing, washers, and nut
-      const totalBodiesAndShimsPx = (bodiesSum + interShimsSum + bearingShimMm + bearing.height) * scale;
-      const threadBottomY = shoulderY + totalBodiesAndShimsPx + 54;
-      svgParts.push(`
-        <rect x="${cx - arborShaftW / 2}" y="${shoulderY}" width="${arborShaftW}" height="${threadBottomY - shoulderY}" fill="url(#threadGrad)" stroke="#4b5563" stroke-width="1"/>
-      `);
-
-      // Draw each cutter and shim stack from top to bottom
-      let curBodyY = shoulderY;
-      const letters = ["A", "B", "C", "D", "E"];
-
-      sol.cutters.forEach((c, idx) => {
-        const bodyH = c.body * scale;
-        const edgeH = c.width * scale;
-        const ovPx = c.overhang * scale;
-        const edgeTopY = curBodyY - ovPx;
-        const letter = letters[k - 1 - idx] || "";
-
-        const leftEdgeX = cx - cutterDiamPx / 2;
-        const rightEdgeX = cx + cutterDiamPx / 2;
-
-        // Left & Right Carbide Tips (drawn with pocket around the orange body, just like the CMT diagram)
-        svgParts.push(`
-          <!-- Cutter ${c.name} Carbide Tips -->
-          <rect x="${leftEdgeX}" y="${edgeTopY}" width="${carbideW}" height="${edgeH}" rx="1.5" fill="#9ca3af" stroke="#374151" stroke-width="1.3"/>
-          <rect x="${rightEdgeX - carbideW}" y="${edgeTopY}" width="${carbideW}" height="${edgeH}" rx="1.5" fill="#9ca3af" stroke="#374151" stroke-width="1.3"/>
-
-          <!-- Cutter ${c.name} Orange Steel Body -->
-          <rect x="${leftEdgeX + 8}" y="${curBodyY}" width="${cutterDiamPx - 16}" height="${bodyH}" fill="url(#orangeBody)" stroke="#7c2d12" stroke-width="1.2"/>
-
-          <!-- Cutter Label on Right -->
-          <text x="${rightEdgeX + 12}" y="${curBodyY + bodyH / 2 + 4}" font-size="13" font-weight="800" fill="#1e293b">
-            ${letter}: ${c.name}
-          </text>
-          <text x="${rightEdgeX + 68}" y="${curBodyY + bodyH / 2 + 4}" font-size="11" fill="#64748b">
-            (body ${c.body.toFixed(1)}mm)
-          </text>
-        `);
-
-        curBodyY += bodyH;
-
-        // Draw shims between this cutter and the next cutter
-        if (idx < k - 1) {
-          const gapDecomp = sol.gapsDecomposed[idx];
-          const gapMm = gapDecomp.tenths / 10;
-          const gapPx = gapMm * scale;
-          const ovMm = sol.overlapsMm[idx];
-
-          // Draw individual shim washers inside the gap
-          let shimCursorY = curBodyY;
-          const shimW = 86;
-          gapDecomp.parts.forEach((part) => {
-            const singleMm = part.val / 10;
-            const singleH = singleMm * scale;
-            const colorMap = { s4: "#1d4ed8", s1: "#047857", s05: "#b45309", s01: "#6d28d9" };
-            const fillCol = colorMap[part.cls] || "#334155";
-            for (let n = 0; n < part.count; n++) {
-              svgParts.push(`
-                <rect x="${cx - shimW / 2}" y="${shimCursorY + 0.4}" width="${shimW}" height="${Math.max(1.2, singleH - 0.8)}" fill="${fillCol}" rx="1"/>
-              `);
-              shimCursorY += singleH;
-            }
-          });
-
-          // Callout line for the shim stack
-          svgParts.push(`
-            <line x1="${cx + shimW / 2 + 4}" y1="${curBodyY + gapPx / 2}" x2="${cx + cutterDiamPx / 2 + 10}" y2="${curBodyY + gapPx / 2}" stroke="#94a3b8" stroke-dasharray="3,3" />
-            <text x="${cx + cutterDiamPx / 2 + 12}" y="${curBodyY + gapPx / 2 + 4}" font-size="11.5" font-weight="700" fill="#0f766e">
-              Shim ${gapDecomp.mm} mm (overlap ${ovMm.toFixed(1)} mm)
-            </text>
-          `);
-
-          curBodyY += gapPx;
-        }
-      });
-
-      // Draw Bearing Clearance Shim below bottom cutter A
-      const brgShimPx = bearingShimMm * scale;
-      let bShimCursorY = curBodyY;
-      const shimW = 86;
-      sol.bearingShim.parts.forEach((part) => {
-        const singleH = (part.val / 10) * scale;
-        const colorMap = { s4: "#1d4ed8", s1: "#047857", s05: "#b45309", s01: "#6d28d9" };
-        for (let n = 0; n < part.count; n++) {
-          svgParts.push(`
-            <rect x="${cx - shimW / 2}" y="${bShimCursorY + 0.4}" width="${shimW}" height="${Math.max(1.2, singleH - 0.8)}" fill="${colorMap[part.cls]}" rx="1"/>
-          `);
-          bShimCursorY += singleH;
-        }
-      });
-      curBodyY += brgShimPx;
-
-      // Draw Ball Bearing
-      const bearingW = Math.round((bearing.od / 47.6) * cutterDiamPx);
-      const bearingH = bearing.height * scale;
-      svgParts.push(`
-        <rect x="${cx - bearingW / 2}" y="${curBodyY}" width="${bearingW}" height="${bearingH}" rx="3" fill="#e5e7eb" stroke="#374151" stroke-width="1.5"/>
-        <rect x="${cx - bearingW / 2 + 10}" y="${curBodyY + 3}" width="${bearingW - 20}" height="${bearingH - 6}" rx="1.5" fill="#d1d5db" stroke="#9ca3af" stroke-width="1"/>
-        <text x="${cx + bearingW / 2 + 12}" y="${curBodyY + bearingH / 2 + 4}" font-size="11.5" font-weight="700" fill="#374151">
-          Bearing ${bearing.id} (&Oslash;${bearing.od}mm)
-        </text>
-      `);
-      curBodyY += bearingH;
-
-      // Two black washers + Nut at the bottom (matching CMT diagram)
-      svgParts.push(`
-        <rect x="${cx - 34}" y="${curBodyY + 4}" width="68" height="10" rx="1.5" fill="#1f2937"/>
-        <rect x="${cx - 34}" y="${curBodyY + 17}" width="68" height="10" rx="1.5" fill="#1f2937"/>
-        <rect x="${cx - 36}" y="${curBodyY + 31}" width="72" height="22" rx="5" fill="url(#shankGrad)" stroke="#111827"/>
-      `);
-
-      // Left Side: Wood Workpiece Profile & Total Groove Width Dimension Callout
-      const woodLeftX = 16;
-      const woodRightX = cx - cutterDiamPx / 2 + (bearing.depth / 47.6) * cutterDiamPx;
-      const grooveLeftX = cx - cutterDiamPx / 2 - 2;
-      const woodTopY = Math.max(18, topCarbideTipY - 36);
-      const woodBotY = Math.min(svgHeight - 18, botCarbideTipY + 46);
-
-      svgParts.push(`
-        <!-- Wood Workpiece Cross-Section on Left -->
-        <path d="
-          M ${woodLeftX} ${woodTopY}
-          L ${woodRightX} ${woodTopY}
-          L ${woodRightX} ${topCarbideTipY}
-          L ${grooveLeftX} ${topCarbideTipY}
-          L ${grooveLeftX} ${botCarbideTipY}
-          L ${woodRightX} ${botCarbideTipY}
-          L ${woodRightX} ${woodBotY}
-          L ${woodLeftX} ${woodBotY}
-          Z
-        " fill="url(#woodGrad)" opacity="0.85" stroke="#b45309" stroke-width="1.5"/>
-
-        <!-- Dimension Arrows for Groove Width H -->
-        <line x1="${grooveLeftX - 24}" y1="${topCarbideTipY}" x2="${grooveLeftX + 4}" y2="${topCarbideTipY}" stroke="#d95308" stroke-width="1.5"/>
-        <line x1="${grooveLeftX - 24}" y1="${botCarbideTipY}" x2="${grooveLeftX + 4}" y2="${botCarbideTipY}" stroke="#d95308" stroke-width="1.5"/>
-        <line x1="${grooveLeftX - 16}" y1="${topCarbideTipY}" x2="${grooveLeftX - 16}" y2="${botCarbideTipY}" stroke="#d95308" stroke-width="2"/>
-
-        <rect x="${woodLeftX + 2}" y="${(topCarbideTipY + botCarbideTipY) / 2 - 12}" width="64" height="24" rx="5" fill="#ff6b18"/>
-        <text x="${woodLeftX + 34}" y="${(topCarbideTipY + botCarbideTipY) / 2 + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">
-          ${currentWidth.toFixed(1)} mm
-        </text>
-      `);
-
-      // Centerline
-      svgParts.push(`
-        <line x1="${cx}" y1="6" x2="${cx}" y2="${svgHeight - 6}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="6,4"/>
-      `);
-
-      svgContainer.innerHTML = `
-        <svg viewBox="0 0 560 ${svgHeight}" width="100%" style="max-width: 560px; height: auto; display: block;">
-          ${svgParts.join("\n")}
-        </svg>
       `;
     }
 
-    // Event Listeners
-    grooveWidthInput.addEventListener("change", (e) => {
-      const val = parseFloat(e.target.value);
-      if (!isNaN(val)) setGrooveWidth(val);
+    function drawShimStackSvg(washers, cx, startY, totalGapPx, shimW = 86) {
+      const n = washers.length;
+      if (n === 0) return "";
+      const out = [];
+      const sep = n > 1 ? Math.min(1.4, (totalGapPx * 0.38) / (n - 1)) : 0;
+      const availH = Math.max(n * 1.2, totalGapPx - sep * (n - 1));
+      const weights = washers.map((w) => Math.pow(w, 0.55));
+      const weightSum = weights.reduce((a, b) => a + b, 0);
+
+      let cursorY = startY;
+      weights.forEach((wt) => {
+        const h = (wt / weightSum) * availH;
+        out.push(
+          `<rect x="${cx - shimW / 2}" y="${cursorY.toFixed(2)}" width="${shimW}" height="${Math.max(1.1, h).toFixed(2)}" fill="#23272e" rx="0.8"/>`
+        );
+        cursorY += h + sep;
+      });
+      return out.join("");
+    }
+
+    function drawVertDim(x, y1, y2, label) {
+      const midY = (y1 + y2) / 2;
+      return `
+        <line x1="${x - 4}" y1="${y1}" x2="${x + 4}" y2="${y1}" stroke="var(--ink-soft)" stroke-width="1.2"/>
+        <line x1="${x - 4}" y1="${y2}" x2="${x + 4}" y2="${y2}" stroke="var(--ink-soft)" stroke-width="1.2"/>
+        <line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="var(--ink-soft)" stroke-width="1.2"/>
+        <rect x="${x - 28}" y="${midY - 9}" width="56" height="18" rx="3" fill="var(--paper)" />
+        <text x="${x}" y="${midY + 4}" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--ink)">${label}</text>
+      `;
+    }
+
+    function drawHorizDim(x1, x2, y, label) {
+      const midX = (x1 + x2) / 2;
+      return `
+        <line x1="${x1}" y1="${y - 4}" x2="${x1}" y2="${y + 4}" stroke="var(--ink-soft)" stroke-width="1.2"/>
+        <line x1="${x2}" y1="${y - 4}" x2="${x2}" y2="${y + 4}" stroke="var(--ink-soft)" stroke-width="1.2"/>
+        <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="var(--ink-soft)" stroke-width="1.2"/>
+        <text x="${midX}" y="${y - 6}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink-soft)">${label}</text>
+      `;
+    }
+
+    function renderGrooveSvg(sol, bearing) {
+      const scale = 13;
+      const cx = 245;
+      const cutterDiamPx = 240;
+      const arborShaftW = 42;
+      const carbideW = 36;
+
+      const st = sol.stack;
+      const k = st.cutters.length;
+      const topOverhang = st.cutters[0].overhang;
+      const bodiesSum = st.cutters.reduce((a, c) => a + c.body, 0);
+      const interShimsSum = st.totalShimTenths / 10;
+      const bearingShimMm = sol.bearingShim.tenths / 10;
+
+      const shoulderY = 76;
+      const topCarbideY = shoulderY - topOverhang * scale;
+      const botCarbideY = topCarbideY + grooveWidth * scale;
+      const totalStackPx = (bodiesSum + interShimsSum + bearingShimMm + bearing.height) * scale;
+      const svgHeight = Math.max(350, Math.round(shoulderY + totalStackPx + 82));
+
+      const out = [svgDefs()];
+
+      out.push(`
+        <rect x="${cx - 23}" y="10" width="46" height="${shoulderY - 20}" rx="3" fill="#23272e" />
+        <rect x="${cx - 29}" y="${shoulderY - 11}" width="58" height="11" rx="2" fill="#23272e" />
+        <rect x="${cx - arborShaftW / 2}" y="${shoulderY}" width="${arborShaftW}" height="${totalStackPx}" fill="#d1d5db" stroke="#4b5563" stroke-width="1"/>
+      `);
+
+      let curY = shoulderY;
+      const leftEdgeX = cx - cutterDiamPx / 2;
+      const rightEdgeX = cx + cutterDiamPx / 2;
+      const labelX = rightEdgeX + 14;
+
+      st.cutters.forEach((c, idx) => {
+        const bodyH = c.body * scale;
+        const edgeH = c.width * scale;
+        const edgeTopY = curY - c.overhang * scale;
+
+        out.push(`
+          <rect x="${leftEdgeX}" y="${edgeTopY}" width="${carbideW}" height="${edgeH}" rx="1.5" fill="#9ca3af" stroke="#374151" stroke-width="1.2"/>
+          <rect x="${rightEdgeX - carbideW}" y="${edgeTopY}" width="${carbideW}" height="${edgeH}" rx="1.5" fill="#9ca3af" stroke="#374151" stroke-width="1.2"/>
+          <rect x="${leftEdgeX + 8}" y="${curY}" width="${cutterDiamPx - 16}" height="${bodyH}" fill="#ff6b18" stroke="#7c2d12" stroke-width="1.1"/>
+          <text x="${labelX}" y="${curY + bodyH / 2 + 4}" font-size="13" font-weight="700" fill="var(--ink)">${c.name}</text>
+        `);
+        curY += bodyH;
+
+        if (idx < k - 1) {
+          const gap = st.gapsDecomposed[idx];
+          const gapPx = (gap.tenths / 10) * scale;
+          out.push(drawShimStackSvg(gap.washers, cx, curY, gapPx));
+          out.push(`
+            <line x1="${cx + 46}" y1="${curY + gapPx / 2}" x2="${labelX - 4}" y2="${curY + gapPx / 2}" stroke="var(--rule-strong)" stroke-dasharray="2,3"/>
+            <text x="${labelX}" y="${curY + gapPx / 2 + 4}" font-size="11.5" font-weight="600" fill="var(--ink-soft)">
+              ${gap.mm} mm (${gap.formula})
+            </text>
+          `);
+          curY += gapPx;
+        }
+      });
+
+      const brgShimPx = bearingShimMm * scale;
+      out.push(drawShimStackSvg(sol.bearingShim.washers, cx, curY, brgShimPx));
+      out.push(`
+        <line x1="${cx + 46}" y1="${curY + brgShimPx / 2}" x2="${labelX - 4}" y2="${curY + brgShimPx / 2}" stroke="var(--rule-strong)" stroke-dasharray="2,3"/>
+        <text x="${labelX}" y="${curY + brgShimPx / 2 + 4}" font-size="11.5" font-weight="600" fill="var(--ink-soft)">
+          ${sol.bearingShim.mm} mm (${sol.bearingShim.formula})
+        </text>
+      `);
+      curY += brgShimPx;
+
+      const bearingW = Math.round((bearing.od / 47.6) * cutterDiamPx);
+      const bearingH = bearing.height * scale;
+      out.push(`
+        <rect x="${cx - bearingW / 2}" y="${curY}" width="${bearingW}" height="${bearingH}" rx="3" fill="#e5e7eb" stroke="#374151" stroke-width="1.4"/>
+        <rect x="${cx - bearingW / 2 + 8}" y="${curY + 3}" width="${bearingW - 16}" height="${bearingH - 6}" rx="1.5" fill="#d1d5db" stroke="#9ca3af" stroke-width="1"/>
+        <line x1="${cx + bearingW / 2 + 4}" y1="${curY + bearingH / 2}" x2="${labelX - 4}" y2="${curY + bearingH / 2}" stroke="var(--rule-strong)" stroke-dasharray="2,3"/>
+        <text x="${labelX}" y="${curY + bearingH / 2 + 4}" font-size="12.5" font-weight="700" fill="var(--ink)">${bearing.id} (&Oslash;${bearing.od})</text>
+      `);
+      curY += bearingH;
+
+      out.push(`
+        <rect x="${cx - 29}" y="${curY + 5}" width="58" height="9" rx="1" fill="#23272e"/>
+        <rect x="${cx - 29}" y="${curY + 17}" width="58" height="9" rx="1" fill="#23272e"/>
+        <rect x="${cx - 31}" y="${curY + 30}" width="62" height="19" rx="4" fill="#23272e"/>
+      `);
+
+      const woodLeftX = 12;
+      const grooveLeftX = leftEdgeX - 2;
+      const woodRightX = grooveLeftX + (bearing.depth / 47.6) * cutterDiamPx;
+      const woodTopY = Math.max(24, topCarbideY - 34);
+      const woodBotY = Math.min(svgHeight - 16, botCarbideY + 36);
+
+      out.push(`
+        <path d="
+          M ${woodLeftX} ${woodTopY}
+          L ${woodRightX} ${woodTopY}
+          L ${woodRightX} ${topCarbideY}
+          L ${grooveLeftX} ${topCarbideY}
+          L ${grooveLeftX} ${botCarbideY}
+          L ${woodRightX} ${botCarbideY}
+          L ${woodRightX} ${woodBotY}
+          L ${woodLeftX} ${woodBotY}
+          Z
+        " fill="url(#woodGrain)" stroke="var(--ink-soft)" stroke-width="1.4"/>
+      `);
+
+      out.push(drawVertDim(woodLeftX + 36, topCarbideY, botCarbideY, `${grooveWidth.toFixed(1)} mm`));
+      out.push(drawHorizDim(grooveLeftX, woodRightX, woodTopY - 8, `${bearing.depth} mm`));
+
+      svgContainer.innerHTML = `<svg viewBox="0 0 540 ${svgHeight}" width="100%" style="max-width:540px; height:auto; display:block;">${out.join("\n")}</svg>`;
+    }
+
+    function renderTongueSvg(sol, bearing) {
+      const scale = 12.5;
+      const cx = 245;
+      const cutterDiamPx = 240;
+      const arborShaftW = 42;
+      const carbideW = 36;
+
+      const topSt = sol.topStack;
+      const botSt = sol.botStack;
+      const topBodies = topSt.cutters.reduce((a, c) => a + c.body, 0);
+      const botBodies = botSt.cutters.reduce((a, c) => a + c.body, 0);
+      const topInterShims = topSt.totalShimTenths / 10;
+      const botInterShims = botSt.totalShimTenths / 10;
+      const topBrgShimMm = sol.topBrgShim.tenths / 10;
+      const botBrgShimMm = sol.botBrgShim.tenths / 10;
+
+      const shoulderY = 74;
+      const totalStackMm = topBodies + topInterShims + topBrgShimMm + bearing.height + botBrgShimMm + botBodies + botInterShims;
+      const totalStackPx = totalStackMm * scale;
+      const svgHeight = Math.max(380, Math.round(shoulderY + totalStackPx + 82));
+
+      const out = [svgDefs()];
+
+      out.push(`
+        <rect x="${cx - 23}" y="10" width="46" height="${shoulderY - 20}" rx="3" fill="#23272e" />
+        <rect x="${cx - 29}" y="${shoulderY - 11}" width="58" height="11" rx="2" fill="#23272e" />
+        <rect x="${cx - arborShaftW / 2}" y="${shoulderY}" width="${arborShaftW}" height="${totalStackPx}" fill="#d1d5db" stroke="#4b5563" stroke-width="1"/>
+      `);
+
+      let curY = shoulderY;
+      const leftEdgeX = cx - cutterDiamPx / 2;
+      const rightEdgeX = cx + cutterDiamPx / 2;
+      const labelX = rightEdgeX + 14;
+
+      topSt.cutters.forEach((c, idx) => {
+        const bodyH = c.body * scale;
+        const edgeH = c.width * scale;
+        const edgeTopY = curY - c.overhang * scale;
+        out.push(`
+          <rect x="${leftEdgeX}" y="${edgeTopY}" width="${carbideW}" height="${edgeH}" rx="1.5" fill="#9ca3af" stroke="#374151" stroke-width="1.2"/>
+          <rect x="${rightEdgeX - carbideW}" y="${edgeTopY}" width="${carbideW}" height="${edgeH}" rx="1.5" fill="#9ca3af" stroke="#374151" stroke-width="1.2"/>
+          <rect x="${leftEdgeX + 8}" y="${curY}" width="${cutterDiamPx - 16}" height="${bodyH}" fill="#ff6b18" stroke="#7c2d12" stroke-width="1.1"/>
+          <text x="${labelX}" y="${curY + bodyH / 2 + 4}" font-size="13" font-weight="700" fill="var(--ink)">${c.name}</text>
+        `);
+        curY += bodyH;
+
+        if (idx < topSt.cutters.length - 1) {
+          const gap = topSt.gapsDecomposed[idx];
+          const gapPx = (gap.tenths / 10) * scale;
+          out.push(drawShimStackSvg(gap.washers, cx, curY, gapPx));
+          out.push(`
+            <line x1="${cx + 46}" y1="${curY + gapPx / 2}" x2="${labelX - 4}" y2="${curY + gapPx / 2}" stroke="var(--rule-strong)" stroke-dasharray="2,3"/>
+            <text x="${labelX}" y="${curY + gapPx / 2 + 4}" font-size="11.5" font-weight="600" fill="var(--ink-soft)">${gap.mm} mm (${gap.formula})</text>
+          `);
+          curY += gapPx;
+        }
+      });
+
+      const topInnerCutter = topSt.cutters[topSt.cutters.length - 1];
+      const tongueTopY = curY + topInnerCutter.overhang * scale;
+
+      const topBrgShimPx = topBrgShimMm * scale;
+      out.push(drawShimStackSvg(sol.topBrgShim.washers, cx, curY, topBrgShimPx));
+      out.push(`
+        <line x1="${cx + 46}" y1="${curY + topBrgShimPx / 2}" x2="${labelX - 4}" y2="${curY + topBrgShimPx / 2}" stroke="var(--rule-strong)" stroke-dasharray="2,3"/>
+        <text x="${labelX}" y="${curY + topBrgShimPx / 2 + 4}" font-size="11.5" font-weight="600" fill="var(--ink-soft)">${sol.topBrgShim.mm} mm (${sol.topBrgShim.formula})</text>
+      `);
+      curY += topBrgShimPx;
+
+      const bearingW = Math.round((bearing.od / 47.6) * cutterDiamPx);
+      const bearingH = bearing.height * scale;
+      out.push(`
+        <rect x="${cx - bearingW / 2}" y="${curY}" width="${bearingW}" height="${bearingH}" rx="3" fill="#e5e7eb" stroke="#374151" stroke-width="1.4"/>
+        <rect x="${cx - bearingW / 2 + 8}" y="${curY + 3}" width="${bearingW - 16}" height="${bearingH - 6}" rx="1.5" fill="#d1d5db" stroke="#9ca3af" stroke-width="1"/>
+        <line x1="${cx + bearingW / 2 + 4}" y1="${curY + bearingH / 2}" x2="${labelX - 4}" y2="${curY + bearingH / 2}" stroke="var(--rule-strong)" stroke-dasharray="2,3"/>
+        <text x="${labelX}" y="${curY + bearingH / 2 + 4}" font-size="12.5" font-weight="700" fill="var(--ink)">${bearing.id} (&Oslash;${bearing.od})</text>
+      `);
+      curY += bearingH;
+
+      const botBrgShimPx = botBrgShimMm * scale;
+      out.push(drawShimStackSvg(sol.botBrgShim.washers, cx, curY, botBrgShimPx));
+      out.push(`
+        <line x1="${cx + 46}" y1="${curY + botBrgShimPx / 2}" x2="${labelX - 4}" y2="${curY + botBrgShimPx / 2}" stroke="var(--rule-strong)" stroke-dasharray="2,3"/>
+        <text x="${labelX}" y="${curY + botBrgShimPx / 2 + 4}" font-size="11.5" font-weight="600" fill="var(--ink-soft)">${sol.botBrgShim.mm} mm (${sol.botBrgShim.formula})</text>
+      `);
+      curY += botBrgShimPx;
+
+      const botInnerCutter = botSt.cutters[0];
+      const tongueBotY = curY - botInnerCutter.overhang * scale;
+
+      botSt.cutters.forEach((c, idx) => {
+        const bodyH = c.body * scale;
+        const edgeH = c.width * scale;
+        const edgeTopY = curY - c.overhang * scale;
+        out.push(`
+          <rect x="${leftEdgeX}" y="${edgeTopY}" width="${carbideW}" height="${edgeH}" rx="1.5" fill="#9ca3af" stroke="#374151" stroke-width="1.2"/>
+          <rect x="${rightEdgeX - carbideW}" y="${edgeTopY}" width="${carbideW}" height="${edgeH}" rx="1.5" fill="#9ca3af" stroke="#374151" stroke-width="1.2"/>
+          <rect x="${leftEdgeX + 8}" y="${curY}" width="${cutterDiamPx - 16}" height="${bodyH}" fill="#ff6b18" stroke="#7c2d12" stroke-width="1.1"/>
+          <text x="${labelX}" y="${curY + bodyH / 2 + 4}" font-size="13" font-weight="700" fill="var(--ink)">${c.name}</text>
+        `);
+        curY += bodyH;
+
+        if (idx < botSt.cutters.length - 1) {
+          const gap = botSt.gapsDecomposed[idx];
+          const gapPx = (gap.tenths / 10) * scale;
+          out.push(drawShimStackSvg(gap.washers, cx, curY, gapPx));
+          out.push(`
+            <line x1="${cx + 46}" y1="${curY + gapPx / 2}" x2="${labelX - 4}" y2="${curY + gapPx / 2}" stroke="var(--rule-strong)" stroke-dasharray="2,3"/>
+            <text x="${labelX}" y="${curY + gapPx / 2 + 4}" font-size="11.5" font-weight="600" fill="var(--ink-soft)">${gap.mm} mm (${gap.formula})</text>
+          `);
+          curY += gapPx;
+        }
+      });
+
+      out.push(`
+        <rect x="${cx - 29}" y="${curY + 5}" width="58" height="9" rx="1" fill="#23272e"/>
+        <rect x="${cx - 29}" y="${curY + 17}" width="58" height="9" rx="1" fill="#23272e"/>
+        <rect x="${cx - 31}" y="${curY + 30}" width="62" height="19" rx="4" fill="#23272e"/>
+      `);
+
+      const bWidth = symmetric ? topCutWidth : botCutWidth;
+      const boardTopY = tongueTopY - topCutWidth * scale;
+      const boardBotY = tongueBotY + bWidth * scale;
+      const woodLeftX = 12;
+      const shoulderX = leftEdgeX - 2;
+      const tongueTipX = cx - bearingW / 2 - 2;
+
+      out.push(`
+        <path d="
+          M ${woodLeftX} ${boardTopY}
+          L ${shoulderX} ${boardTopY}
+          L ${shoulderX} ${tongueTopY}
+          L ${tongueTipX} ${tongueTopY}
+          L ${tongueTipX} ${tongueBotY}
+          L ${shoulderX} ${tongueBotY}
+          L ${shoulderX} ${boardBotY}
+          L ${woodLeftX} ${boardBotY}
+          Z
+        " fill="url(#woodGrain)" stroke="var(--ink-soft)" stroke-width="1.4"/>
+      `);
+
+      out.push(drawVertDim(woodLeftX + 36, tongueTopY, tongueBotY, `${tongueWidth.toFixed(1)} mm`));
+      out.push(drawHorizDim(shoulderX, tongueTipX, boardTopY - 10, `${bearing.depth} mm`));
+
+      svgContainer.innerHTML = `<svg viewBox="0 0 540 ${svgHeight}" width="100%" style="max-width:540px; height:auto; display:block;">${out.join("\n")}</svg>`;
+    }
+
+    // Event Wiring
+    tabGroove.addEventListener("click", () => {
+      mode = "groove";
+      tabGroove.setAttribute("aria-checked", "true");
+      tabTongue.setAttribute("aria-checked", "false");
+      grooveControls.hidden = false;
+      tongueControls.hidden = true;
+      updateCalculation();
     });
 
-    grooveSlider.addEventListener("input", (e) => {
-      setGrooveWidth(parseFloat(e.target.value));
+    tabTongue.addEventListener("click", () => {
+      mode = "tongue";
+      tabTongue.setAttribute("aria-checked", "true");
+      tabGroove.setAttribute("aria-checked", "false");
+      tongueControls.hidden = false;
+      grooveControls.hidden = true;
+      updateCalculation();
     });
 
-    btnMinus.addEventListener("click", () => setGrooveWidth(currentWidth - 0.1));
-    btnPlus.addEventListener("click", () => setGrooveWidth(currentWidth + 0.1));
-    bearingSelect.addEventListener("change", () => renderAll());
-    overlapPref.addEventListener("change", () => recalculate());
+    symCheckEl.addEventListener("change", (e) => {
+      symmetric = e.target.checked;
+      botCutGroupEl.hidden = symmetric;
+      topCutLabelEl.textContent = symmetric ? "Shoulder width (each side)" : "Top shoulder width";
+      if (symmetric) {
+        botCutWidth = topCutWidth;
+        botCutWidthEl.value = botCutWidth.toFixed(1);
+      }
+      updateCalculation();
+    });
 
-    // Initial render
-    initPresets();
-    setGrooveWidth(18.0);
+    function bindNumberInput(el, min, max, setter) {
+      el.addEventListener("input", (e) => {
+        const v = parseFloat(e.target.value);
+        if (!isNaN(v) && v >= min && v <= max) {
+          setter(Math.round(v * 10) / 10);
+        }
+      });
+      el.addEventListener("change", (e) => {
+        let v = parseFloat(e.target.value);
+        if (isNaN(v)) v = min;
+        v = Math.max(min, Math.min(max, Math.round(v * 10) / 10));
+        el.value = v.toFixed(1);
+        setter(v);
+      });
+    }
+
+    bindNumberInput(grooveWidthEl, 2.0, 26.0, (v) => {
+      grooveWidth = v;
+      updateCalculation();
+    });
+
+    bindNumberInput(tongueWidthEl, 3.2, 16.0, (v) => {
+      tongueWidth = v;
+      updateCalculation();
+    });
+
+    bindNumberInput(topCutWidthEl, 1.0, 16.0, (v) => {
+      topCutWidth = v;
+      if (symmetric) {
+        botCutWidth = v;
+        botCutWidthEl.value = v.toFixed(1);
+      }
+      updateCalculation();
+    });
+
+    bindNumberInput(botCutWidthEl, 1.0, 16.0, (v) => {
+      botCutWidth = v;
+      updateCalculation();
+    });
+
+    bearingSelectEl.addEventListener("change", updateCalculation);
+
+    updateCalculation();
   </script>
 </body>
 </html>
-
