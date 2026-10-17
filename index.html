@@ -452,50 +452,125 @@
 
     const toTenths = (mm) => Math.round(mm * 10);
 
-    // Decompose a single shim gap (in tenths of mm).
-    // Note: there is only ONE 0.3 mm spacer in the set, so allow03 controls whether this gap can use it.
-    function decomposeShims(tenths, allow03 = false) {
-      let rem = Math.max(0, Math.round(tenths));
-      const sizes = [
-        { label: "4", val: 40, max: Infinity },
-        { label: "1", val: 10, max: Infinity },
-        { label: "0.5", val: 5, max: Infinity },
-        { label: "0.3", val: 3, max: allow03 ? 1 : 0 },
-        { label: "0.1", val: 1, max: Infinity }
-      ];
+    // Exact shim inventory in the CMT 8/923.001 set:
+    // 10x 0.1mm, 1x 0.3mm, 5x 0.5mm, 6x 1mm, 2x 3mm, 3x 4mm
+    const SHIM_SPECS = [
+      { label: "4",   val: 40, maxQty: 3 },
+      { label: "3",   val: 30, maxQty: 2 },
+      { label: "1",   val: 10, maxQty: 6 },
+      { label: "0.5", val: 5,  maxQty: 5 },
+      { label: "0.3", val: 3,  maxQty: 1 },
+      { label: "0.1", val: 1,  maxQty: 10 }
+    ];
+
+    function defaultShimInventory() {
+      return SHIM_SPECS.map((s) => s.maxQty);
+    }
+
+    // Decompose a single shim gap (in tenths of mm) using at most availInv of each shim size,
+    // minimizing the number of washers used. Returns null if impossible with availInv.
+    function decomposeOneGap(tenths, availInv = defaultShimInventory()) {
+      const target = Math.max(0, Math.round(tenths));
+      if (target === 0) {
+        return {
+          tenths: 0,
+          mm: "0.0",
+          parts: [],
+          washers: [],
+          formula: "",
+          usedCounts: SHIM_SPECS.map(() => 0),
+          totalCount: 0
+        };
+      }
+
+      const maxSuffix = new Array(SHIM_SPECS.length + 1).fill(0);
+      for (let i = SHIM_SPECS.length - 1; i >= 0; i--) {
+        maxSuffix[i] = maxSuffix[i + 1] + availInv[i] * SHIM_SPECS[i].val;
+      }
+      if (target > maxSuffix[0]) return null;
+
+      let bestCounts = null;
+      let bestPieces = Infinity;
+      const curCounts = new Array(SHIM_SPECS.length).fill(0);
+
+      function search(idx, rem, pieces) {
+        if (rem === 0) {
+          if (pieces < bestPieces) {
+            bestPieces = pieces;
+            bestCounts = [...curCounts];
+          }
+          return;
+        }
+        if (idx === SHIM_SPECS.length || rem > maxSuffix[idx]) return;
+
+        const val = SHIM_SPECS[idx].val;
+        if (pieces + Math.ceil(rem / val) >= bestPieces) return;
+
+        const maxTake = Math.min(availInv[idx], Math.floor(rem / val));
+        for (let c = maxTake; c >= 0; c--) {
+          curCounts[idx] = c;
+          search(idx + 1, rem - c * val, pieces + c);
+        }
+        curCounts[idx] = 0;
+      }
+
+      search(0, target, 0);
+      if (!bestCounts) return null;
+
       const parts = [];
       const washers = [];
-      let used03 = false;
-      for (const s of sizes) {
-        if (s.max === 0) continue;
-        const count = Math.min(s.max, Math.floor(rem / s.val));
+      for (let i = 0; i < SHIM_SPECS.length; i++) {
+        const count = bestCounts[i];
         if (count > 0) {
+          const s = SHIM_SPECS[i];
           parts.push({ ...s, count });
-          for (let i = 0; i < count; i++) washers.push(s.val);
-          rem -= count * s.val;
-          if (s.val === 3) used03 = true;
+          for (let k = 0; k < count; k++) washers.push(s.val);
         }
       }
       const formula = parts.map((p) => (p.count > 1 ? `${p.count}×${p.label}` : `${p.label}`)).join(" + ");
       return {
-        tenths: Math.round(tenths),
-        mm: (Math.round(tenths) / 10).toFixed(1),
+        tenths: target,
+        mm: (target / 10).toFixed(1),
         parts,
         washers,
         formula,
-        used03,
+        usedCounts: bestCounts,
         totalCount: washers.length
       };
     }
 
-    // Decompose an array of shim gaps across the arbor, using the single 0.3mm spacer in at most ONE gap
-    function decomposeGapList(gapsTenths, canUse03 = true) {
-      let available03 = canUse03;
-      return gapsTenths.map((t) => {
-        const d = decomposeShims(t, available03);
-        if (d.used03) available03 = false;
-        return d;
-      });
+    // Decompose an array of shim gaps across the arbor without exceeding initialInv.
+    // Returns { decomps, remainingInv } or null if the required shims exceed inventory.
+    function decomposeGapList(gapsTenths, initialInv = defaultShimInventory()) {
+      const totalNeeded = gapsTenths.reduce((a, b) => a + Math.max(0, Math.round(b)), 0);
+      const totalAvail = initialInv.reduce((acc, qty, i) => acc + qty * SHIM_SPECS[i].val, 0);
+      if (totalNeeded > totalAvail) return null;
+
+      function tryOrder(indices) {
+        const inv = [...initialInv];
+        const results = new Array(gapsTenths.length);
+        for (const idx of indices) {
+          const d = decomposeOneGap(gapsTenths[idx], inv);
+          if (!d) return null;
+          for (let s = 0; s < SHIM_SPECS.length; s++) {
+            inv[s] -= d.usedCounts[s];
+          }
+          results[idx] = d;
+        }
+        return { decomps: results, remainingInv: inv };
+      }
+
+      const naturalIndices = gapsTenths.map((_, i) => i);
+      const descIndices = [...naturalIndices].sort((a, b) => gapsTenths[b] - gapsTenths[a]);
+
+      const resDesc = tryOrder(descIndices);
+      const resNat = tryOrder(naturalIndices);
+      if (resDesc && resNat) {
+        const countDesc = resDesc.decomps.reduce((a, d) => a + d.totalCount, 0);
+        const countNat = resNat.decomps.reduce((a, d) => a + d.totalCount, 0);
+        return countDesc <= countNat ? resDesc : resNat;
+      }
+      return resDesc || resNat;
     }
 
     function getAllMultisets() {
@@ -531,7 +606,7 @@
       return true;
     }
 
-    function allocateShimsAcrossGaps(totalShimT, maxGapT, canUse03 = true) {
+    function allocateShimsAcrossGaps(totalShimT, maxGapT, initialInv = defaultShimInventory(), extraGapsT = []) {
       const m = maxGapT.length;
       let best = null;
       let bestCost = Infinity;
@@ -539,10 +614,13 @@
       function dfs(idx, remT, current) {
         if (idx === m) {
           if (remT !== 0) return;
+          const pack = decomposeGapList([...current, ...extraGapsT], initialInv);
+          if (!pack) return;
+          const decomps = pack.decomps.slice(0, m);
+
           let cost = 0;
           const overlaps = current.map((g, i) => maxGapT[i] - g);
           const avgOv = overlaps.reduce((a, b) => a + b, 0) / m;
-          const decomps = decomposeGapList(current, canUse03);
           for (let i = 0; i < m; i++) {
             const g = current[i];
             const ov = overlaps[i];
@@ -553,7 +631,12 @@
           }
           if (cost < bestCost) {
             bestCost = cost;
-            best = [...current];
+            best = {
+              alloc: [...current],
+              decomps,
+              extraDecomps: pack.decomps.slice(m),
+              remainingInv: pack.remainingInv
+            };
           }
           return;
         }
@@ -572,21 +655,24 @@
       return best;
     }
 
-    // Solve exact width stack (for Groove mode)
+    // Solve exact width stack (for Groove mode, including the bearing clearance shim in the inventory check)
     function solveExactStack(targetMm, orientBottomToBearing = true) {
       const targetT = toTenths(targetMm);
       const solutions = [];
 
       for (const c of CUTTER_SPECS) {
         if (toTenths(c.width) === targetT) {
+          const bearingShimT = c.overhang >= 1.0 ? 15 : 10;
+          const brgDecomp = decomposeOneGap(bearingShimT, defaultShimInventory());
+          if (!brgDecomp) continue;
           solutions.push({
             counts: { [c.id]: 1 },
             cutters: [c],
             gapsTenths: [],
             gapsDecomposed: [],
+            bearingShim: brgDecomp,
             totalShimTenths: 0,
             actualWidthMm: c.width,
-            used03: false,
             shimPieces: 0,
             score: 1000
           });
@@ -616,11 +702,15 @@
         }
         if (totalShimT > maxPossibleShimT) continue;
 
-        const alloc = allocateShimsAcrossGaps(totalShimT, maxGapT, true);
-        if (!alloc) continue;
+        const botCutter = ordered[k - 1];
+        const bearingShimT = botCutter.overhang >= 1.0 ? 15 : 10;
 
-        const gapsDecomposed = decomposeGapList(alloc, true);
-        const used03 = gapsDecomposed.some((g) => g.used03);
+        const solved = allocateShimsAcrossGaps(totalShimT, maxGapT, defaultShimInventory(), [bearingShimT]);
+        if (!solved) continue;
+
+        const alloc = solved.alloc;
+        const gapsDecomposed = solved.decomps;
+        const bearingShim = solved.extraDecomps[0];
         const overlapsMm = alloc.map((t, i) => (maxGapT[i] - t) / 10);
         const totalOverlapMm = overlapsMm.reduce((a, b) => a + b, 0);
         const minOverlapMm = Math.min(...overlapsMm);
@@ -646,9 +736,9 @@
           cutters: ordered,
           gapsTenths: alloc,
           gapsDecomposed,
+          bearingShim,
           totalShimTenths: totalShimT,
           actualWidthMm: targetT / 10,
-          used03,
           shimPieces,
           score
         });
@@ -672,9 +762,9 @@
             cutters: [c],
             gapsTenths: [],
             gapsDecomposed: [],
+            remainingInv: defaultShimInventory(),
             totalShimTenths: 0,
             actualWidthMm: c.width,
-            used03: false,
             shimPieces: 0,
             score: 1200 - excessMm * 25
           });
@@ -708,10 +798,10 @@
           if (actualT < minT) continue;
           if (actualT > minT + 25) break;
 
-          // Keep 0.3mm spacer free for bearing shims unless needed
-          const alloc = allocateShimsAcrossGaps(totT, maxGapT, false);
-          if (!alloc) continue;
-          const gapsDecomposed = decomposeGapList(alloc, false);
+          const solved = allocateShimsAcrossGaps(totT, maxGapT, defaultShimInventory());
+          if (!solved) continue;
+          const alloc = solved.alloc;
+          const gapsDecomposed = solved.decomps;
           const overlapsMm = alloc.map((t, i) => (maxGapT[i] - t) / 10);
           const minOverlapMm = Math.min(...overlapsMm);
           const minShimMm = Math.min(...alloc) / 10;
@@ -727,9 +817,9 @@
               cutters: ordered,
               gapsTenths: alloc,
               gapsDecomposed,
+              remainingInv: solved.remainingInv,
               totalShimTenths: totT,
               actualWidthMm: actualT / 10,
-              used03: false,
               shimPieces,
               score
             };
@@ -744,27 +834,25 @@
 
     function solveGrooveMode(grooveMm) {
       const stacks = solveExactStack(grooveMm, true);
-      return stacks.map((st) => {
-        const botCutter = st.cutters[st.cutters.length - 1];
-        const bearingShimT = botCutter.overhang >= 1.0 ? 15 : 10;
-        return {
-          mode: "groove",
-          stack: st,
-          bearingShim: decomposeShims(bearingShimT, !st.used03),
-          score: st.score
-        };
-      });
+      return stacks.map((st) => ({
+        mode: "groove",
+        stack: st,
+        bearingShim: st.bearingShim,
+        score: st.score
+      }));
     }
 
-    // Split total bearing shim (in tenths) into top and bottom bearing shims, using at most ONE 0.3mm spacer total
-    function splitBearingShims(totalBrgShimT, topInnerOverhang, botInnerOverhang, canUse03 = true) {
+    // Split total bearing shim (in tenths) into top and bottom bearing shims using only remaining available shims
+    function splitBearingShims(totalBrgShimT, topInnerOverhang, botInnerOverhang, availInv) {
       let best = null;
       let bestCost = Infinity;
       const idealTopT = Math.max(1, Math.round((totalBrgShimT * topInnerOverhang) / (topInnerOverhang + botInnerOverhang)));
 
       for (let topT = 1; topT <= totalBrgShimT - 1; topT++) {
         const botT = totalBrgShimT - topT;
-        const [dTop, dBot] = decomposeGapList([topT, botT], canUse03);
+        const pack = decomposeGapList([topT, botT], availInv);
+        if (!pack) continue;
+        const [dTop, dBot] = pack.decomps;
         let cost = (dTop.totalCount + dBot.totalCount) * 6 + Math.abs(topT - idealTopT) * 1.5;
         if (topT < topInnerOverhang * 10) cost += (topInnerOverhang * 10 - topT) * 15;
         if (botT < botInnerOverhang * 10) cost += (botInnerOverhang * 10 - botT) * 15;
@@ -797,6 +885,14 @@
             continue;
           }
 
+          // Check that top and bottom shoulder inter-cutter shims fit within the set's shim inventory
+          const shoulderGaps = [...topSt.gapsTenths, ...botSt.gapsTenths];
+          const shoulderPack = decomposeGapList(shoulderGaps, defaultShimInventory());
+          if (!shoulderPack) {
+            inventoryError = true;
+            continue;
+          }
+
           const topInner = topSt.cutters[topSt.cutters.length - 1];
           const botInner = botSt.cutters[0];
           const innerOverhangSumT = Math.round((topInner.overhang + botInner.overhang) * 10);
@@ -807,9 +903,21 @@
             continue;
           }
 
-          const canUse03 = !topSt.used03 && !botSt.used03;
-          const split = splitBearingShims(totalBrgShimT, topInner.overhang, botInner.overhang, canUse03);
-          if (!split) continue;
+          const split = splitBearingShims(totalBrgShimT, topInner.overhang, botInner.overhang, shoulderPack.remainingInv);
+          if (!split) {
+            inventoryError = true;
+            continue;
+          }
+
+          const topGapsCount = topSt.gapsTenths.length;
+          const topStWithInv = {
+            ...topSt,
+            gapsDecomposed: shoulderPack.decomps.slice(0, topGapsCount)
+          };
+          const botStWithInv = {
+            ...botSt,
+            gapsDecomposed: shoulderPack.decomps.slice(topGapsCount)
+          };
 
           const totalBrgPieces = split.top.totalCount + split.bot.totalCount;
           let score = topSt.score + botSt.score - totalBrgPieces * 6;
@@ -819,8 +927,8 @@
 
           results.push({
             mode: "tongue",
-            topStack: topSt,
-            botStack: botSt,
+            topStack: topStWithInv,
+            botStack: botStWithInv,
             topBrgShim: split.top,
             botBrgShim: split.bot,
             score
